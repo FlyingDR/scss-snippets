@@ -1,0 +1,19 @@
+$path_images: '' !default;
+$path_sprites: 'sprites' !default;
+$path_fonts: '' !default;
+
+@function path($path: 'images', $file: '') {
+    @if ($path == 'images') {
+        $path: $path_images;
+    } @else if ($path == 'sprites') {
+        $path: $path_sprites;
+    } @else if ($path == 'fonts') {
+        $path: $path_fonts;
+    }
+    @if ($path != '') {
+        $path: "#{$path}/#{$file}";
+    } @else {
+        $path: $file;
+    }
+    @return $path;
+}

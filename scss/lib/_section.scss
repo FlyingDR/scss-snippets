@@ -1,0 +1,84 @@
+@import "susy";
+@import "../lib/responsive";
+@import "../lib/spacer";
+
+%page_section {
+    @include container();
+    @include full();
+    @include break();
+    float: none;
+    margin: 0 auto;
+    @include responsive-each() {
+        @if (r-has(page-padding)) {
+            padding: 0 v(r-get(page-padding, 0));
+        }
+    }
+}
+
+// Declare vertical margins and background for page section
+//
+// @param int|string|list $top  Either top margin or list with one or more parameters for mixin
+// @param int|string $bottom    Bottom margin
+// @param mixed $bg             Background for section
+@mixin section($top: null, $bottom: null, $bg: null) {
+    @if (type_of($top) == list) {
+        $map: $top;
+        $_bottom: $bottom;
+        $_bg: $bg;
+        @if (length($map) == 1) {
+            $top: nth($map, 1);
+            $bottom: $_bottom;
+            $bg: $_bg;
+        } @else if (length($map) == 2) {
+            $top: nth($map, 1);
+            $bottom: nth($map, 2);
+            @if ($_bottom != null) {
+                $bg: $_bottom;
+            } @else {
+                $bg: $_bg;
+            }
+        } @else {
+            $top: nth($map, 1);
+            $bottom: nth($map, 2);
+            $bg: nth($map, 3);
+        }
+    }
+    @if ($top != null) {
+        @if (type_of($top) == number) {
+            $top: spacer($top);
+        }
+        @if ($bg) {
+            padding-top: $top;
+        } @else {
+            margin-top: $top;
+        }
+    }
+    @if ($bottom != null) {
+        @if (type_of($bottom) == number) {
+            $bottom: spacer($bottom);
+        }
+        @if ($bg) {
+            padding-bottom: $bottom;
+        } @else {
+            margin-bottom: $bottom;
+        }
+    }
+    @if ($bg != null) {
+        background: $bg;
+    }
+}
+
+// Section information declaration with responsive modifications
+//
+// @param string $key           Responsive configuration key to get information from
+// @param int|string|list $top  Either top margin or list with one or more parameters for mixin
+// @param int|string $bottom    Bottom margin
+// @param mixed $bg             Background for section
+@mixin r-section($key, $top: null, $bottom: null, $bg: null) {
+    @include section($top, $bottom, $bg);
+    @include responsive-each() {
+        @if (r-has($key)) {
+            @include section(r-get($key));
+        }
+    }
+}

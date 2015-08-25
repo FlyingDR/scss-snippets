@@ -1,0 +1,45 @@
+@import "compass/typography/units";
+
+$use-rem: true !default;
+
+@function rv($value) {
+    @if (unit($value) == '') {
+        @if ($value != 0) {
+            @warn 'Unitless value is passed to rv(), treating it as px';
+        }
+        $value: $value * 1px;
+    }
+    @return convert-length($value, rem);
+}
+
+@function px($value) {
+    $unit: unit($value);
+    @if ($unit == '') {
+        @return $value * 1px;
+    } @else if ($unit != 'px') {
+        @return convert-length($value, px);
+    } @else {
+        @return $value;
+    }
+}
+
+@function v($value) {
+    @if ($use-rem and (unit($value) != 'rem')) {
+        @return rv($value);
+    } @else if ((not $use-rem) and (unit($value) != 'px')) {
+        @return px($value);
+    } @else {
+        @return $value;
+    }
+}
+
+@function uround($value) {
+    @if (not $use-rem) {
+        $value: round($value);
+    }
+    @return $value;
+}
+
+@function centered($total, $size, $compensation: 0) {
+    @return uround((v($total) - v($size)) / 2) + v($compensation);
+}

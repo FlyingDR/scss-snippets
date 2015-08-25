@@ -1,0 +1,14 @@
+
+// Converts percent value into number
+@function from_percent($percent,$fraction:true) {
+    $p: $percent;
+    $i: 0;
+    @while $p > 0 {
+        $i: $i + 1;
+        $p: $p - 1%;
+    }
+    @if $fraction {
+        $i: $i / 100;
+    }
+    @return $i;
+}

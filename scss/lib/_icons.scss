@@ -1,0 +1,136 @@
+// -----------------------------------------------------
+// Module for generating images and icons as CSS sprites
+// -----------------------------------------------------
+@import "units";
+
+$icon_width: 16px !default;
+$icon_height: 16px !default;
+$icon_spacing: 5px !default;
+$sprites_path: false !default;
+
+$_sprite-maps: ();
+$_sprite-urls: ();
+
+%sprite {
+    display: block;
+    text-indent: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+@mixin register-sprites-map($sprites-map, $id: 'default') {
+    @if (type_of($sprites-map) != 'compass::sassextensions::sprites::spritemap') {
+        @error 'Invalid sprites map is given for id: ' + $id;
+    }
+    $_sprite-maps: map_merge($_sprite-maps, ($id: $sprites-map)) !global;
+    $_sprite-urls: map_merge($_sprite-urls, ($id: sprite_url($sprites-map))) !global;
+}
+
+@function get-sprite-map($map: null) {
+    @if (type_of($map) == 'compass::sassextensions::sprites::spritemap') {
+        @return $map;
+    }
+    @if ($map == null) {
+        $map: 'default';
+    }
+    @if (not map_has_key($_sprite-maps, $map)) {
+        @error 'Unknown sprites map id: ' + $map;
+    }
+    @return map_get($_sprite-maps, $map);
+}
+
+@function get-sprite-url($map: null) {
+    @if ($map == null) {
+        $map: 'default';
+    }
+    @if (not map_has_key($_sprite-urls, $map)) {
+        @error 'Unknown sprites map id: ' + $map;
+    }
+    @return map_get($_sprite-urls, $map);
+}
+
+@function get-sprite-file($sprite, $map: null) {
+    @return sprite_file(get-sprite-map($map), $sprite);
+}
+
+@function icon_width($sprite, $map: null) {
+    @return v(image_width(get-sprite-file($sprite, $map)));
+}
+
+@function icon_height($sprite, $map: null) {
+    @return v(image_height(get-sprite-file($sprite, $map)));
+}
+
+@mixin image($image, $bg: transparent) {
+    @extend %sprite;
+    width: image_width($image);
+    height: image_height($image);
+    background: image_url($image) no-repeat $bg;
+}
+
+@mixin icon($sprite, $map: null, $dx: null, $dy: null, $only_position: false) {
+    $position: sprite-position(get-sprite-map($map), $sprite);
+    @if ($only_position) {
+        background-position: $position;
+    } @else {
+        width: icon_width($sprite, $map);
+        height: icon_height($sprite, $map);
+        background: get-sprite-url($map) $position no-repeat;
+        @if ($dx != null or $dy != null) {
+            position: relative;
+            @if ($dx != null) {
+                left: $dx;
+            }
+            @if ($dy != null) {
+                top: $dy;
+            }
+        }
+    }
+}
+
+@mixin icon_left($sprite, $map: null, $spacing: $icon_spacing, $dx: null, $dy: null, $only_position: false) {
+    &:before {
+        @include icon($sprite, $map, $dx, $dy, $only_position);
+        @if (not $only_position) {
+            content: '';
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: v($spacing);
+        }
+    }
+}
+
+@mixin icon_right($sprite, $map: null, $spacing: $icon_spacing, $dx: null, $dy: null, $only_position: false) {
+    &:after {
+        @include icon($sprite, $map, $dx, $dy, $only_position);
+        @if (not $only_position) {
+            content: '';
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: v($spacing);
+        }
+    }
+}
+
+@mixin sprite_image($sprite, $map: null) {
+    @extend %sprite;
+    @include icon($sprite, $map);
+}
+
+@mixin declare_sprites($sprites, $prefix: '', $image: false, $map: null) {
+    @if ($prefix != '') {
+        $prefix: $prefix + '_';
+    }
+    @each $sprite in $sprites {
+        .#{$prefix}#{$sprite} {
+            @include icon($sprite, $map);
+            @if ($image) {
+                @extend %sprite;
+            }
+        }
+    }
+}
+
+@if ($sprites_path) {
+    @include register-sprites-map(sprite_map($sprites_path));
+}
