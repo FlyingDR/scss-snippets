@@ -4,15 +4,15 @@ $responsive-config: () !default;
 $responsive-default-mq: null !default;
 $responsive-base-font-size: 15px !default;
 
-$_responsive-initialized: false;
-$_responsive-current-mq: null;
+$responsive-is-initialized: false;
+$responsive-current-mq: null;
 
 // Get current media query Id within responsive-each()
 //
 // @return string
 @function responsive-current-mq() {
-    @if ($_responsive-current-mq != null) {
-        @return $_responsive-current-mq;
+    @if ($responsive-current-mq != null) {
+        @return $responsive-current-mq;
     } @else {
         @return $responsive-default-mq;
     }
@@ -32,17 +32,17 @@ $_responsive-current-mq: null;
 // @return mixed
 @function responsive-get($key, $default: null, $mq: null, $config: $responsive-config) {
     @if (not $mq) {
-        @if (map_has_key($config, $default)) {
+        @if (map-has-key($config, $default)) {
             $mq: $default;
             $default: null;
         } @else {
             $mq: r-mq();
         }
     }
-    $full_key: $key;
+    $full-key: $key;
     $result: $default;
-    @if (map_has_key($config, $mq)) {
-        $mqcfg: map_get($config, $mq);
+    @if (map-has-key($config, $mq)) {
+        $mqcfg: map-get($config, $mq);
         $parts: ();
         @while str-index($key, '/') != null {
             $parts: append($parts, str-slice($key, 1, str-index($key, '/') - 1));
@@ -52,10 +52,10 @@ $_responsive-current-mq: null;
         $error: false;
         @each $p in $parts {
             @if (not $error) {
-                @if (type_of($mqcfg) == map) {
-                    @if (map_has_key($mqcfg, $p)) {
-                        $result: map_get($mqcfg, $p);
-                        $mqcfg: map_get($mqcfg, $p);
+                @if (type-of($mqcfg) == map) {
+                    @if (map-has-key($mqcfg, $p)) {
+                        $result: map-get($mqcfg, $p);
+                        $mqcfg: map-get($mqcfg, $p);
                     } @else {
                         $error: true;
                     }
@@ -65,7 +65,7 @@ $_responsive-current-mq: null;
                 @if ($error) {
                     $mqcfg: '___NO_MAP_IN_CONFIG___';
                     @if ($default == null) {
-                        @warn "Unavailable configuration path '" + $full_key + "' for media query '" + $mq + "'";
+                        @warn "Unavailable configuration path '" + $full-key + "' for media query '" + $mq + "'";
                     }
                     $result: $default;
                 }
@@ -112,20 +112,20 @@ $_responsive-current-mq: null;
 @mixin responsive-each($layout: true, $config: $responsive-config) {
     @each $mq in map-keys($config) {
         @include susy-breakpoint($mq) {
-            $_responsive-current-mq: $mq !global;
+            $responsive-current-mq: $mq !global;
             @if ($layout == false) {
                 @content;
             } @else {
                 $l: null;
                 @if ($layout == true and r-has(layout, null, $config)) {
                     $l: r-get(layout, null, null, $config);
-                } @else if (type_of($layout) == string) {
+                } @else if (type-of($layout) == string) {
                     @if (r-has($layout, null, $config)) {
                         $l: r-get($layout, null, null, $config);
                     } @else {
                         $l: $layout;
                     }
-                } @else if (type_of($layout) == list or type_of($layout) == map) {
+                } @else if (type-of($layout) == list or type-of($layout) == map) {
                     $l: $layout;
                 }
                 @if ($l) {
@@ -138,12 +138,12 @@ $_responsive-current-mq: null;
             }
         }
     }
-    $_responsive-current-mq: null !global;
+    $responsive-current-mq: null !global;
 }
 
 // Initialize $susy and $susy-media based on information from $responsive-config
 @mixin responsive-init() {
-    @if (not $_responsive-initialized) {
+    @if (not $responsive-is-initialized) {
         @if (length($responsive-config) > 0) {
             @if (not $responsive-default-mq) {
                 @warn 'Default media query key is not defined in $responsive-default-mq';
@@ -153,7 +153,7 @@ $_responsive-current-mq: null;
                 @each $mq in map-keys($responsive-config) {
                     $query: r-get(media-query, $mq, $config: $responsive-config);
                     @if ($query) {
-                        $susy-media: map_merge($susy-media, ($mq: $query)) !global;
+                        $susy-media: map-merge($susy-media, ($mq: $query)) !global;
                     }
                 }
             }
@@ -169,7 +169,7 @@ $_responsive-current-mq: null;
             font-size: $base-font-size;
         }
         @include global-box-sizing();
-        $_responsive-initialized: true !global;
+        $responsive-is-initialized: true !global;
     }
 }
 
