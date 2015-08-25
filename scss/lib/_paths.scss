@@ -1,14 +1,36 @@
-$path_images: '' !default;
-$path_sprites: 'sprites' !default;
-$path_fonts: '' !default;
+$registered-paths: (
+    images: '',
+    sprites: 'sprites',
+    fonts: ''
+) !default;
 
+// Register named path
+//
+// @param string $name  Path name to register
+// @param string $path  Path to register
+@function register-path($name, $path: '') {
+    $paths: ();
+    @if (type-of($name) == map) {
+        $paths: $name;
+    } @else {
+        $paths: ($name: $path);
+    }
+    $registered-paths: map-merge($registered-paths, $paths) !global;
+}
+
+// Get path to given file within given path
+//
+// @param string $path          Path name to use
+// @param string|list $file     Additional path components
+// @return string
 @function path($path: 'images', $file: '') {
-    @if ($path == 'images') {
-        $path: $path_images;
-    } @else if ($path == 'sprites') {
-        $path: $path_sprites;
-    } @else if ($path == 'fonts') {
-        $path: $path_fonts;
+    @if (not map-has-key($path, $registered-paths)) {
+        @warn 'Unknown path type: ' + $path;
+        @return '';
+    }
+    $path: map-get($registered-paths, $path);
+    @if (type-of($file) == list) {
+        $file: join($file, (), '/');
     }
     @if ($path != '') {
         $path: "#{$path}/#{$file}";
