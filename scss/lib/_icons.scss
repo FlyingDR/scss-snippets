@@ -3,78 +3,127 @@
 // -----------------------------------------------------
 @import "units";
 
-$icon_width: 16px !default;
-$icon_height: 16px !default;
-$icon_spacing: 5px !default;
-$sprites_path: false !default;
+$icon-spacing: 5px !default;
+$sprites-path: false !default;
 
-$_sprite-maps: ();
-$_sprite-urls: ();
+$registered-sprite-maps: ();
+$registered-sprite-urls: ();
 
-%sprite {
+// CSS style to use for rendering standalone images
+%standalone-image-css {
     display: block;
     text-indent: 100%;
     white-space: nowrap;
     overflow: hidden;
-}
+} !default;
 
+// Register given sprites map to given id to allow referring it later
+//
+// @param spritemap $sprites-map    Sprites map to register
+// @param string $id                Id to assign given sprites map to
 @mixin register-sprites-map($sprites-map, $id: 'default') {
-    @if (type_of($sprites-map) != 'compass::sassextensions::sprites::spritemap') {
+    @if (type-of($sprites-map) != 'compass::sassextensions::sprites::spritemap') {
         @error 'Invalid sprites map is given for id: ' + $id;
     }
-    $_sprite-maps: map_merge($_sprite-maps, ($id: $sprites-map)) !global;
-    $_sprite-urls: map_merge($_sprite-urls, ($id: sprite_url($sprites-map))) !global;
+    $registered-sprite-maps: map-merge($registered-sprite-maps, ($id: $sprites-map)) !global;
+    $registered-sprite-urls: map-merge($registered-sprite-urls, ($id: sprite-url($sprites-map))) !global;
 }
 
-@function get-sprite-map($map: null) {
-    @if (type_of($map) == 'compass::sassextensions::sprites::spritemap') {
+// Get (given or registered) sprites map
+//
+// @param spritemap|string $map     Either sprites map or id of previously registered sprites map to get
+// @return spritemap
+@function get-sprites-map($map: null) {
+    @if (type-of($map) == 'compass::sassextensions::sprites::spritemap') {
         @return $map;
     }
     @if ($map == null) {
         $map: 'default';
     }
-    @if (not map_has_key($_sprite-maps, $map)) {
+    @if (not map-has-key($registered-sprite-maps, $map)) {
         @error 'Unknown sprites map id: ' + $map;
     }
-    @return map_get($_sprite-maps, $map);
+    @return map-get($registered-sprite-maps, $map);
 }
 
+// Get url of sprite image for (given or registered) sprites map
+//
+// @param spritemap|string $map     Either sprites map or id of previously registered sprites map to use
+// @return string
 @function get-sprite-url($map: null) {
     @if ($map == null) {
         $map: 'default';
     }
-    @if (not map_has_key($_sprite-urls, $map)) {
+    @if (not map-has-key($registered-sprite-urls, $map)) {
         @error 'Unknown sprites map id: ' + $map;
     }
-    @return map_get($_sprite-urls, $map);
+    @return map-get($registered-sprite-urls, $map);
 }
 
+// Get path to given sprite file within given sprite map
+//
+// @param string $sprite        Sprite name to get path for
+// @param spritemap|string $map Either sprites map or id of previously registered sprites map to use
+// @return string
 @function get-sprite-file($sprite, $map: null) {
-    @return sprite_file(get-sprite-map($map), $sprite);
+    @return sprite-file(get-sprites-map($map), $sprite);
 }
 
-@function icon_width($sprite, $map: null) {
-    @return v(image_width(get-sprite-file($sprite, $map)));
+// Get width of sprite image within given sprite map
+//
+// @param string $sprite        Name of sprite image to get width of
+// @param spritemap|string $map Either sprites map or id of previously registered sprites map to use
+// @return int
+@function sprite-width($sprite, $map: null) {
+    @return v(image-width(get-sprite-file($sprite, $map)));
 }
 
-@function icon_height($sprite, $map: null) {
-    @return v(image_height(get-sprite-file($sprite, $map)));
+// Alias of sprite-width() for backward compatibility
+@function icon-width($sprite, $map: null) {
+    @warn 'icon-width() is deprecated, use sprite-width() instead';
+    @return sprite-width($sprite, $map: null);
 }
 
+// Get height of sprite image within given sprite map
+//
+// @param string $sprite        Name of sprite image to get height of
+// @param spritemap|string $map Either sprites map or id of previously registered sprites map to use
+// @return int
+@function sprite-height($sprite, $map: null) {
+    @return v(image-height(get-sprite-file($sprite, $map)));
+}
+
+// Alias of sprite-height() for backward compatibility
+@function icon-height($sprite, $map: null) {
+    @warn 'icon-height() is deprecated, use sprite-height() instead';
+    @return sprite-height($sprite, $map: null);
+}
+
+// Insert standalone image
+//
+// @param string $image     Path to image to insert
+// @param color $bg         Background color for image
 @mixin image($image, $bg: transparent) {
-    @extend %sprite;
-    width: image_width($image);
-    height: image_height($image);
-    background: image_url($image) no-repeat $bg;
+    @extend %standalone-image-css;
+    width: image-width($image);
+    height: image-height($image);
+    background: image-url($image) no-repeat $bg;
 }
 
-@mixin icon($sprite, $map: null, $dx: null, $dy: null, $only_position: false) {
-    $position: sprite-position(get-sprite-map($map), $sprite);
-    @if ($only_position) {
+// Insert image from CSS sprite as icon
+//
+// @param string $sprite            Sprite name to use
+// @param spritemap|string $map     Either sprites map or id of previously registered sprites map to use
+// @param mixed $dx                 X offset of image from its normal position
+// @param mixed $dy                 Y offset of image from its normal position
+// @param boolean $only-position    true to render only sprite position information, false to render complete style
+@mixin icon($sprite, $map: null, $dx: null, $dy: null, $only-position: false) {
+    $position: sprite-position(get-sprites-map($map), $sprite);
+    @if ($only-position) {
         background-position: $position;
     } @else {
-        width: icon_width($sprite, $map);
-        height: icon_height($sprite, $map);
+        width: sprite-width($sprite, $map);
+        height: sprite-height($sprite, $map);
         background: get-sprite-url($map) $position no-repeat;
         @if ($dx != null or $dy != null) {
             position: relative;
@@ -88,10 +137,18 @@ $_sprite-urls: ();
     }
 }
 
-@mixin icon_left($sprite, $map: null, $spacing: $icon_spacing, $dx: null, $dy: null, $only_position: false) {
+// Insert image from CSS sprite as icon at the left of current element
+//
+// @param string $sprite            Sprite name to use
+// @param spritemap|string $map     Either sprites map or id of previously registered sprites map to use
+// @param mixed $spacing            Space between icon and current element
+// @param mixed $dx                 X offset of image from its normal position
+// @param mixed $dy                 Y offset of image from its normal position
+// @param boolean $only-position    true to render only sprite position information, false to render complete style
+@mixin icon-left($sprite, $map: null, $spacing: $icon-spacing, $dx: null, $dy: null, $only-position: false) {
     &:before {
-        @include icon($sprite, $map, $dx, $dy, $only_position);
-        @if (not $only_position) {
+        @include icon($sprite, $map, $dx, $dy, $only-position);
+        @if (not $only-position) {
             content: '';
             display: inline-block;
             vertical-align: middle;
@@ -100,10 +157,18 @@ $_sprite-urls: ();
     }
 }
 
-@mixin icon_right($sprite, $map: null, $spacing: $icon_spacing, $dx: null, $dy: null, $only_position: false) {
+// Insert image from CSS sprite as icon at the right of current element
+//
+// @param string $sprite            Sprite name to use
+// @param spritemap|string $map     Either sprites map or id of previously registered sprites map to use
+// @param mixed $spacing            Space between icon and current element
+// @param mixed $dx                 X offset of image from its normal position
+// @param mixed $dy                 Y offset of image from its normal position
+// @param boolean $only-position    true to render only sprite position information, false to render complete style
+@mixin icon-right($sprite, $map: null, $spacing: $icon-spacing, $dx: null, $dy: null, $only-position: false) {
     &:after {
-        @include icon($sprite, $map, $dx, $dy, $only_position);
-        @if (not $only_position) {
+        @include icon($sprite, $map, $dx, $dy, $only-position);
+        @if (not $only-position) {
             content: '';
             display: inline-block;
             vertical-align: middle;
@@ -112,25 +177,43 @@ $_sprite-urls: ();
     }
 }
 
-@mixin sprite_image($sprite, $map: null) {
-    @extend %sprite;
+// Insert image from CSS sprite as standalone image
+//
+// @param string $sprite            Sprite name to use
+// @param spritemap|string $map     Either sprites map or id of previously registered sprites map to use
+@mixin sprite-image($sprite, $map: null) {
+    @extend %standalone-image-css;
     @include icon($sprite, $map);
 }
 
-@mixin declare_sprites($sprites, $prefix: '', $image: false, $map: null) {
-    @if ($prefix != '') {
+// Declare given list of CSS sprites as separate CSS classes
+//
+// @param list $sprites             List of CSS sprites to render
+// @param string $prefix            Prefix to add to CSS class name for sprites
+// @param boolean $as-image         true to render style for standalone images, false to render icons (default)
+// @param spritemap|string $map     Either sprites map or id of previously registered sprites map to use
+@mixin declare-icons($sprites, $prefix: null, $as-image: false, $map: null) {
+    @if ($prefix != null) {
         $prefix: $prefix + '_';
     }
     @each $sprite in $sprites {
         .#{$prefix}#{$sprite} {
             @include icon($sprite, $map);
-            @if ($image) {
-                @extend %sprite;
+            @if ($as-image) {
+                @include sprite-image($sprite, $map);
+            } @else {
+                @include icon($sprite, $map);
             }
         }
     }
 }
 
-@if ($sprites_path) {
-    @include register-sprites-map(sprite_map($sprites_path));
+// Alias for declare-icons() for backward compatibility
+@mixin declare-sprites($sprites, $prefix: null, $image: false, $map: null) {
+    @warn 'declare-sprites() is deprecated, use declare-icons() instead';
+    @include declare-icons($sprites, $prefix, $image, $map);
+}
+
+@if ($sprites-path) {
+    @include register-sprites-map(sprite-map($sprites-path));
 }
