@@ -163,6 +163,20 @@ $responsive-current-mq: null;
                     $susy: $layout !global;
                 }
             }
+            @if (mixin-exists(register-font-size)) {
+                @include responsive-each() {
+                    @if (r-has(font-sizes)) {
+                        $sizes: r-get(font-sizes);
+                        @if (type-of($sizes) == map) {
+                            $prefix: 'responsive-'+r-mq()+'-';
+                            @each $name, $size in $sizes {
+                                //noinspection SassScssResolvedByNameOnly
+                                @include register-font-size($prefix + $name, $size);
+                            }
+                        }
+                    }
+                }
+            }
         }
         $base-font-size: $responsive-base-font-size !global;
         html, body {

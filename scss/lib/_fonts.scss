@@ -40,6 +40,7 @@ $font-default-properties: (
 //
 // @param list $font  Font values list to parse
 // @return map
+// noinspection SassScssResolvedByNameOnly
 @function parse-font($font) {
     @if (type-of($font) == map) {
         // Treat map argument as "already parsed font properties"
@@ -60,6 +61,12 @@ $font-default-properties: (
         @if (map-has-key($font-families, $item) and not index($added, font-family)) {
             $ik: font-family;
             $iv: join(map-get($font-families, $item), (), comma);
+        } @else if (function-exists(r-mq) and map-has-key($font-sizes, 'responsive-' + r-mq() + '-' + $item) and not index($added, font-size)) {
+            $ik: font-size;
+            $iv: map-get($font-sizes, 'responsive-' + r-mq() + '-' + $item);
+        } @else if (global-variable-exists(responsive-default-mq) and map-has-key($font-sizes, 'responsive-' + $responsive-default-mq + '-' + $item) and not index($added, font-size)) {
+            $ik: font-size;
+            $iv: map-get($font-sizes, 'responsive-' + $responsive-default-mq + '-' + $item);
         } @else if (index($named-font-sizes, $item) and not index($added, font-size)) {
             $ik: font-size;
         } @else if (map-has-key($font-sizes, $item) and not index($added, font-size)) {
