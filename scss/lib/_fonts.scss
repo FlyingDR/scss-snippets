@@ -49,7 +49,9 @@ $font-default-properties: (
     $styles: normal, italic, oblique;
     $whitespace: normal, pre, nowrap, pre-wrap, pre-line;
     $transform: none, capitalize, uppercase, lowercase, full-width;
-    $sizes: px, em;
+    $named-font-sizes: xx-small, x-small, small, medium, large, x-large, xx-large, larger, smaller;
+    $font-size-units: px, em, rem, vw, vh, vmin, vmax;
+    $letter-spacing-units: px, em, rem;
     $added: '';
     $properties: ();
     @each $item in $font {
@@ -58,12 +60,14 @@ $font-default-properties: (
         @if (map-has-key($font-families, $item) and not index($added, font-family)) {
             $ik: font-family;
             $iv: join(map-get($font-families, $item), (), comma);
+        } @else if (index($named-font-sizes, $item) and not index($added, font-size)) {
+            $ik: font-size;
         } @else if (map-has-key($font-sizes, $item) and not index($added, font-size)) {
             $ik: font-size;
-            $iv: v(map-get($font-sizes, $item));
-        } @else if ((type-of($item) == number) and index($sizes, unit($item)) and not index($added, font-size)) {
+            $iv: map-get($font-sizes, $item);
+        } @else if ((type-of($item) == number) and index($font-size-units, unit($item)) and not index($added, font-size)) {
             $ik: font-size;
-            $iv: v($item);
+            $iv: $item;
         } @else if (index($weights, $item) and not index($added, font-weight)) {
             $ik: font-weight;
         } @else if (index($styles, $item) and not index($added, font-style)) {
@@ -72,7 +76,7 @@ $font-default-properties: (
             $ik: color;
         } @else if ((type-of($item) == number) and not ((unit($item) == em) and (abs($item) <= 0.5)) and not index($added, line-height)) {
             $ik: line-height;
-        } @else if ((type-of($item) == number and index($sizes, unit($item))) and not index($added, letter-spacing)) {
+        } @else if ((type-of($item) == number and index($letter-spacing-units, unit($item))) and not index($added, letter-spacing)) {
             $ik: letter-spacing;
         } @else if (index($whitespace, $item) and not index($added, white-space)) {
             $ik: white-space;
@@ -80,6 +84,9 @@ $font-default-properties: (
             $ik: text-transform;
         }
         @if ($ik != null) {
+            @if ($ik == font-size and index(px rem, unit($iv))) {
+                $iv: v($iv);
+            }
             $properties: map-merge($properties, ($ik: $iv));
             $added: append($added, $ik);
         }
