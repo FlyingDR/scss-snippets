@@ -41,6 +41,10 @@ $font-default-properties: (
 // @param list $font  Font values list to parse
 // @return map
 @function parse-font($font) {
+    @if (type-of($font) == map) {
+        // Treat map argument as "already parsed font properties"
+        @return $font;
+    }
     $weights: normal, bold, bolder, lighter, 100, 200, 300, 400, 500, 600, 700, 800, 900;
     $styles: normal, italic, oblique;
     $whitespace: normal, pre, nowrap, pre-wrap, pre-line;
@@ -85,7 +89,7 @@ $font-default-properties: (
 
 // Generate font CSS properties from given font string
 //
-// @param list $font          Font values list to parse
+// @param list|map $font      Either list of font values list to parse or already parsed list of font properties
 // @param list $important     List of font properties that should be marked as important
 // @param map $modifications    Map of font properties modifications to apply to given font values
 @mixin font($font, $important: '', $modifications: null) {
