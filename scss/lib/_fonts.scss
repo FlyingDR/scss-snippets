@@ -10,7 +10,7 @@ $font-file-formats: (
     ttf: truetype,
     svg: svg,
 ) !default;
-$font-default-formats: (woff, ttf, eot, svg) !default;
+$font-default-formats: woff ttf eot svg !default;
 $font-default-properties: (
     font-weight: normal,
     font-style: normal,
@@ -107,13 +107,22 @@ $font-default-properties: (
 //
 // @param string $id                Font Id to use in application
 // @param string|list $font-names   List of font family names to use for this font e.g. (Tahoma, Helvetica, Arial, sans-serif)
-// @param string $filename          Base file name (without extension) of font file if file is stored locally
+// @param string|map $filename      One of:
+//                                  - base file name (without extension) of font file if file is stored locally
+//                                  - map ($filename: $properties)
+//                                  - map: ($filename: (properties: $properties, formats: $formats))
 // @param string|list $properties   String for parse-font() or list of additional font CSS properties to put in @font-face definition, e.g. (font-weight: bold), defaults to $font-default-properties
-// @param map $formats              List of file formats for locally stored font file, defaults to $font-default-formats
+// @param list $formats             List of file formats for locally stored font file, defaults to $font-default-formats
 @mixin register-font($id, $font-names, $filename: null, $properties: null, $formats: null) {
     @if (type-of($font-names) != list) {
         $font-names: ($font-names);
     }
+    $font-families: map-merge($font-families, ($id: $font-names)) !global;
+    @if ($filename != null) {
+        $definitions: ();
+        @if (type-of($filename) == string) {
+            $filename: ($filename: (properties: $properties, formats: $formats));
+        }
     @if ($properties == null) {
         $properties: $font-default-properties;
     } @else if (type-of($properties) == list) {
@@ -122,9 +131,43 @@ $font-default-properties: (
     @if ($formats == null) {
         $formats: $font-default-formats;
     }
-    $font-families: map-merge($font-families, ($id:$font-names)) !global;
-    @if ($filename != null) {
-        $font-files: map-merge($font-files, ($filename: (name: nth($font-names, 1), formats: $formats, properties: $properties))) !global;
+        @each $fname, $fdef in $filename {
+            $fprop: null;
+            $fformats: null;
+            @if (type-of($fdef) == string) {
+                $fprop: $fdef;
+            } @else if (type-of($fdef) == list) {
+                @if ((length($fdef) == 2) and (type-of(nth($fdef, 2)) == map)) {
+                    // This is list of properties and formats
+                    $fprop: nth($fdef, 1);
+                    $fformats: nth($fdef, 2);
+                } @else {
+                    // This is list of properties
+                    $fprop: $fdef;
+                }
+            } @else if (type-of($fdef) == map) {
+                @if (map-has-key($fdef, properties)) {
+                    $fprop: map-get($fdef, properties);
+                }
+                @if (map-has-key($fdef, formats)) {
+                    $fformats: map-get($fdef, formats);
+                }
+            }
+            $definitions: map-merge($definitions, ($fname: (properties: $fprop, formats: $fformats)));
+        }
+        @each $fname, $fdef in $definitions {
+            $fprop: map-get($fdef, properties);
+            $fformats: map-get($fdef, formats);
+            @if ($fprop == null) {
+                $fprop: $properties;
+            } @else if (type-of($fprop) == list) {
+                $fprop: parse-font($fprop);
+            }
+            @if ($fformats == null) {
+                $fformats: $formats;
+            }
+            $font-files: map-merge($font-files, ($fname: (name: nth($font-names, 1), formats: $fformats, properties: $fprop))) !global;
+        }
     }
 }
 
