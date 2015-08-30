@@ -9,8 +9,11 @@
     margin: 0 auto;
     @if (mixin-exists(r-each-if)) {
         //noinspection SassScssResolvedByNameOnly
-        @include r-each-if(page-padding) {
-            padding: 0 v(r-get(page-padding, 0));
+        @include r-each-if(layout, layout) {
+            @include container();
+            @if (r-has(page-padding)) {
+                padding: 0 v(r-get(page-padding, 0));
+            }
         }
     }
 }
