@@ -30,6 +30,7 @@ $responsive-current-mq: null;
 // @param string $mq        Media query Id to get configuration for (can be passed instead of $default)
 // @param map $config       Configuration map to get value from
 // @return mixed
+//noinspection CssInvalidFunction
 @function responsive-get($key, $default: null, $mq: null, $config: $responsive-config) {
     @if (not $mq) {
         @if (map-has-key($config, $default)) {
@@ -64,6 +65,9 @@ $responsive-current-mq: null;
                 }
                 @if ($error) {
                     $mqcfg: '___NO_MAP_IN_CONFIG___';
+                    @if (($key != parent) and (r-has(parent, $mq, $config)) and (map-has-key($config, r-get(parent, null, $mq, $config)))) {
+                        $result: r-get($key, $default, r-get(parent, null, $mq, $config), $config);
+                    }
                     @if ($default == null) {
                         @warn "Unavailable configuration path '" + $full-key + "' for media query '" + $mq + "'";
                     }
