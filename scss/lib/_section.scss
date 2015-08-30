@@ -1,5 +1,5 @@
 @import "susy";
-@import "../lib/spacer";
+@import "spacer";
 
 %page-section {
     @include container();
