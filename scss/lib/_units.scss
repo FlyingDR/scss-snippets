@@ -1,4 +1,5 @@
 @import "compass/typography/units";
+@import "spacer";
 
 $use-rem: true !default;
 
@@ -24,7 +25,9 @@ $use-rem: true !default;
 }
 
 @function v($value) {
-    @if ($use-rem and (unit($value) != 'rem')) {
+    @if ((type-of($value) == number) and unitless($value) and $value != 0) {
+        @return spacer($value);
+    } @else if ($use-rem and (unit($value) != 'rem')) {
         @return rv($value);
     } @else if ((not $use-rem) and (unit($value) != 'px')) {
         @return px($value);
