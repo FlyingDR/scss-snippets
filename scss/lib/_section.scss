@@ -1,5 +1,6 @@
 @import "susy";
 @import "spacer";
+@import "box";
 
 %page-section {
     @include container();
@@ -95,6 +96,12 @@
                 }
                 @if (r-has($key + '/span')) {
                     @include span(r-get($key + '/span'));
+                }
+                @if (r-has($key + '/margin')) {
+                    @include margin(r-get($key + '/margin'));
+                }
+                @if (r-has($key + '/padding')) {
+                    @include padding(r-get($key + '/padding'));
                 }
             } @else {
                 @if (r-has($key)) {
