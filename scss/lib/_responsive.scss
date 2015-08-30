@@ -90,11 +90,7 @@ $responsive-current-mq: null;
 // @return boolean
 @function responsive-has($key, $mq: null, $config: $responsive-config) {
     $test: '___unavailable_key___';
-    @if (r-get($key, $test, $mq, $config) == $test) {
-        @return false;
-    } @else {
-        @return true;
-    }
+    @return (r-get($key, $test, $mq, $config) != $test);
 }
 
 // Shorthand for responsive-has()
