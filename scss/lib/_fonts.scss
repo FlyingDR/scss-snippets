@@ -91,7 +91,7 @@ $font-default-properties: (
             $ik: text-transform;
         }
         @if ($ik != null) {
-            @if ($ik == font-size and index(px rem, unit($iv))) {
+            @if (($ik == font-size) and (type-of($iv) == number) and (index(px rem, unit($iv)))) {
                 $iv: v($iv);
             }
             $properties: map-merge($properties, ($ik: $iv));
@@ -141,14 +141,14 @@ $font-default-properties: (
         @if (type-of($filename) == string) {
             $filename: ($filename: (properties: $properties, formats: $formats));
         }
-    @if ($properties == null) {
-        $properties: $font-default-properties;
-    } @else if (type-of($properties) == list) {
-        $properties: parse-font($properties);
-    }
-    @if ($formats == null) {
-        $formats: $font-default-formats;
-    }
+        @if ($properties == null) {
+            $properties: $font-default-properties;
+        } @else if (type-of($properties) == list) {
+            $properties: parse-font($properties);
+        }
+        @if ($formats == null) {
+            $formats: $font-default-formats;
+        }
         @each $fname, $fdef in $filename {
             $fprop: null;
             $fformats: null;
