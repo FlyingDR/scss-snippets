@@ -1,15 +1,15 @@
 @import "susy";
-@import "../lib/responsive";
 @import "../lib/spacer";
 
-%page_section {
+%page-section {
     @include container();
     @include full();
     @include break();
     float: none;
     margin: 0 auto;
-    @include responsive-each() {
-        @if (r-has(page-padding)) {
+    @if (mixin-exists(r-each-if)) {
+        //noinspection SassScssResolvedByNameOnly
+        @include r-each-if(page-padding) {
             padding: 0 v(r-get(page-padding, 0));
         }
     }
@@ -21,21 +21,21 @@
 // @param int|string $bottom    Bottom margin
 // @param mixed $bg             Background for section
 @mixin section($top: null, $bottom: null, $bg: null) {
-    @if (type_of($top) == list) {
+    @if (type-of($top) == list) {
         $map: $top;
-        $_bottom: $bottom;
-        $_bg: $bg;
+        $l-bottom: $bottom;
+        $l-bg: $bg;
         @if (length($map) == 1) {
             $top: nth($map, 1);
-            $bottom: $_bottom;
-            $bg: $_bg;
+            $bottom: $l-bottom;
+            $bg: $l-bg;
         } @else if (length($map) == 2) {
             $top: nth($map, 1);
             $bottom: nth($map, 2);
-            @if ($_bottom != null) {
-                $bg: $_bottom;
+            @if ($l-bottom != null) {
+                $bg: $l-bottom;
             } @else {
-                $bg: $_bg;
+                $bg: $l-bg;
             }
         } @else {
             $top: nth($map, 1);
@@ -44,7 +44,7 @@
         }
     }
     @if ($top != null) {
-        @if (type_of($top) == number) {
+        @if (type-of($top) == number) {
             $top: spacer($top);
         }
         @if ($bg) {
@@ -54,7 +54,7 @@
         }
     }
     @if ($bottom != null) {
-        @if (type_of($bottom) == number) {
+        @if (type-of($bottom) == number) {
             $bottom: spacer($bottom);
         }
         @if ($bg) {
@@ -76,8 +76,9 @@
 // @param mixed $bg             Background for section
 @mixin r-section($key, $top: null, $bottom: null, $bg: null) {
     @include section($top, $bottom, $bg);
-    @include responsive-each() {
-        @if (r-has($key)) {
+    @if (mixin-exists(r-each-if)) {
+        //noinspection SassScssResolvedByNameOnly
+        @include r-each-if($key) {
             @include section(r-get($key));
         }
     }
