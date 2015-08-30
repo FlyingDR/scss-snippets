@@ -111,7 +111,7 @@ $responsive-current-mq: null;
 // @param map $config       Configuration map to use
 @mixin responsive-each($layout: true, $config: $responsive-config, $if-key: null) {
     @each $mq in map-keys($config) {
-        @if (($if-key == null) or (r-has($if-key))) {
+        @if (($if-key == null) or (r-has($if-key, $mq, $config))) {
             @include susy-breakpoint($mq) {
                 $responsive-current-mq: $mq !global;
                 @if ($layout == false) {
