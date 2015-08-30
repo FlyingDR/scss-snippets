@@ -24,7 +24,7 @@ $registered-paths: (
 // @param string|list $file     Additional path components
 // @return string
 @function path($path: 'images', $file: '') {
-    @if (not map-has-key($path, $registered-paths)) {
+    @if (not map-has-key($registered-paths, $path)) {
         @warn 'Unknown path type: ' + $path;
         @return '';
     }
