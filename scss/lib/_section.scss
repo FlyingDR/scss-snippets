@@ -40,10 +40,12 @@
             } @else {
                 $bg: $l-bg;
             }
-        } @else {
+        } @else if (length($map) == 3) {
             $top: nth($map, 1);
             $bottom: nth($map, 2);
             $bg: nth($map, 3);
+        } @else {
+            @error "section() argument should contain 1..3 items if passed as list of values";
         }
     }
     @if ($top != null) {
