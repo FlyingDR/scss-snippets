@@ -81,10 +81,26 @@
 // @param mixed $bg             Background for section
 @mixin r-section($key, $top: null, $bottom: null, $bg: null) {
     @include section($top, $bottom, $bg);
-    @if (mixin-exists(r-each-if)) {
+    @if (mixin-exists(r-each)) {
         //noinspection SassScssResolvedByNameOnly
-        @include r-each-if($key) {
-            @include section(r-get($key));
+        @include r-each() {
+            @if (r-has($key + '/section') or r-has($key + '/layout')) {
+                @if (r-has($key + '/section')) {
+                    @include section(r-get($key + '/section'));
+                }
+                @if (r-has($key + '/layout')) {
+                    @include with-layout(r-get($key + '/layout')) {
+                        @content;
+                    }
+                }
+                @if (r-has($key + '/span')) {
+                    @include span(r-get($key + '/span'));
+                }
+            } @else {
+                @if (r-has($key)) {
+                    @include section(r-get($key));
+                }
+            }
         }
     }
 }
