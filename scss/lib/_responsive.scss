@@ -111,24 +111,26 @@ $responsive-current-mq: null;
 // @param map $config       Configuration map to use
 @mixin responsive-each($layout: true, $config: $responsive-config, $if-key: null) {
     @each $mq in map-keys($config) {
+        $l: null;
+        @if ($layout == true and r-has(layout, null, $config)) {
+            $l: r-get(layout, null, null, $config);
+        } @else if (type-of($layout) == string) {
+            @if (r-has($layout, null, $config)) {
+                $l: r-get($layout, null, null, $config);
+            } @else {
+                $l: $layout;
+            }
+        } @else if (type-of($layout) == list or type-of($layout) == map) {
+            $l: $layout;
+        }
         @if (($if-key == null) or (r-has($if-key, $mq, $config))) {
-            @include susy-breakpoint($mq) {
-                $responsive-current-mq: $mq !global;
-                @if ($layout == false) {
+            @if ($responsive-current-mq != null) {
+                @if ($responsive-current-mq == $mq) {
                     @content;
-                } @else {
-                    $l: null;
-                    @if ($layout == true and r-has(layout, null, $config)) {
-                        $l: r-get(layout, null, null, $config);
-                    } @else if (type-of($layout) == string) {
-                        @if (r-has($layout, null, $config)) {
-                            $l: r-get($layout, null, null, $config);
-                        } @else {
-                            $l: $layout;
-                        }
-                    } @else if (type-of($layout) == list or type-of($layout) == map) {
-                        $l: $layout;
-                    }
+                }
+            } @else {
+                $responsive-current-mq: $mq !global;
+                @include susy-breakpoint($mq) {
                     @if ($l) {
                         @include with-layout($l) {
                             @content;
@@ -137,10 +139,10 @@ $responsive-current-mq: null;
                         @content;
                     }
                 }
+                $responsive-current-mq: null !global;
             }
         }
     }
-    $responsive-current-mq: null !global;
 }
 
 // Shorthand for responsive-each()
