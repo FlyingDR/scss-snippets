@@ -28,7 +28,7 @@ $responsive-current-mq: null;
 // @param string $key       Configuration key name, multiple level keys are defined as a/b/c
 // @param mixed $default    Default value for given configuration key (can be skipped)
 // @param string $mq        Media query Id to get configuration for (can be passed instead of $default)
-// @param list $config      Configuration object to get value from
+// @param map $config       Configuration map to get value from
 // @return mixed
 @function responsive-get($key, $default: null, $mq: null, $config: $responsive-config) {
     @if (not $mq) {
@@ -86,7 +86,7 @@ $responsive-current-mq: null;
 //
 // @param string $key       Configuration key name, multiple level keys are defined as a/b/c
 // @param string $mq        Media query Id to get configuration for (can be passed instead of $default)
-// @param list $config      Configuration object to get value from
+// @param map $config       Configuration map to get value from
 // @return boolean
 @function responsive-has($key, $mq: null, $config: $responsive-config) {
     $test: '___unavailable_key___';
@@ -108,37 +108,53 @@ $responsive-current-mq: null;
 //                          false to disable layout use
 //                          string to either specify configuration key of layout to use or explicit shorthand layout
 //                          list or map to define explicit layout
-// @param list $config      Configuration object to use
-@mixin responsive-each($layout: true, $config: $responsive-config) {
+// @param map $config       Configuration map to use
+@mixin responsive-each($layout: true, $config: $responsive-config, $if-key: null) {
     @each $mq in map-keys($config) {
-        @include susy-breakpoint($mq) {
-            $responsive-current-mq: $mq !global;
-            @if ($layout == false) {
-                @content;
-            } @else {
-                $l: null;
-                @if ($layout == true and r-has(layout, null, $config)) {
-                    $l: r-get(layout, null, null, $config);
-                } @else if (type-of($layout) == string) {
-                    @if (r-has($layout, null, $config)) {
-                        $l: r-get($layout, null, null, $config);
-                    } @else {
+        @if (($if-key == null) or (r-has($if-key))) {
+            @include susy-breakpoint($mq) {
+                $responsive-current-mq: $mq !global;
+                @if ($layout == false) {
+                    @content;
+                } @else {
+                    $l: null;
+                    @if ($layout == true and r-has(layout, null, $config)) {
+                        $l: r-get(layout, null, null, $config);
+                    } @else if (type-of($layout) == string) {
+                        @if (r-has($layout, null, $config)) {
+                            $l: r-get($layout, null, null, $config);
+                        } @else {
+                            $l: $layout;
+                        }
+                    } @else if (type-of($layout) == list or type-of($layout) == map) {
                         $l: $layout;
                     }
-                } @else if (type-of($layout) == list or type-of($layout) == map) {
-                    $l: $layout;
-                }
-                @if ($l) {
-                    @include with-layout($l) {
+                    @if ($l) {
+                        @include with-layout($l) {
+                            @content;
+                        }
+                    } @else {
                         @content;
                     }
-                } @else {
-                    @content;
                 }
             }
         }
     }
     $responsive-current-mq: null !global;
+}
+
+// Shorthand for responsive-each()
+@mixin r-each($layout: true, $config: $responsive-config, $if-key: null) {
+    @include responsive-each($layout, $config, $if-key) {
+        @content;
+    }
+}
+
+// Shorthand for responsive-each() with mandatory $if-key
+@mixin r-each-if($if-key, $layout: true, $config: $responsive-config) {
+    @include responsive-each($layout, $config, $if-key) {
+        @content;
+    }
 }
 
 // Initialize $susy and $susy-media based on information from $responsive-config
@@ -164,15 +180,13 @@ $responsive-current-mq: null;
                 }
             }
             @if (mixin-exists(register-font-size)) {
-                @include responsive-each() {
-                    @if (r-has(font-sizes)) {
-                        $sizes: r-get(font-sizes);
-                        @if (type-of($sizes) == map) {
-                            $prefix: 'responsive-'+r-mq()+'-';
-                            @each $name, $size in $sizes {
-                                //noinspection SassScssResolvedByNameOnly
-                                @include register-font-size($prefix + $name, $size);
-                            }
+                @include r-each-if(font-sizes) {
+                    $sizes: r-get(font-sizes);
+                    @if (type-of($sizes) == map) {
+                        $prefix: 'responsive-'+r-mq()+'-';
+                        @each $name, $size in $sizes {
+                            //noinspection SassScssResolvedByNameOnly
+                            @include register-font-size($prefix + $name, $size);
                         }
                     }
                 }
