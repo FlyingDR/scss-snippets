@@ -26,6 +26,15 @@ $responsive-current-mq: null;
     @return responsive-current-mq($fallback);
 }
 
+// Get list of available media queries
+//
+// @param map $config       Configuration map to get value from
+// @return list
+@function responsive-mq-list($config: $responsive-config)
+{
+    @return map-keys($config);
+}
+
 // Get configuration value from responsive config
 //
 // @param string $key       Configuration key name, multiple level keys are defined as a/b/c
