@@ -9,18 +9,21 @@ $responsive-current-mq: null;
 
 // Get current media query Id within responsive-each()
 //
-// @return string
-@function responsive-current-mq() {
+// @param boolean $fallback     true to fallback to default media query if there is no explicit current media query, false to return null in this case
+// @return string|null
+@function responsive-current-mq($fallback: true) {
     @if ($responsive-current-mq != null) {
         @return $responsive-current-mq;
-    } @else {
+    } @else if ($fallback) {
         @return $responsive-default-mq;
+    } @else {
+        @return null;
     }
 }
 
 // Shorthand for responsive-current-mq()
-@function r-mq() {
-    @return responsive-current-mq();
+@function r-mq($fallback: true) {
+    @return responsive-current-mq($fallback);
 }
 
 // Get configuration value from responsive config
@@ -179,18 +182,6 @@ $responsive-current-mq: null;
                 $layout: r-get(layout, $config: $responsive-config);
                 @if ($layout != null) {
                     $susy: $layout !global;
-                }
-            }
-            @if (mixin-exists(register-font-size)) {
-                @include r-each-if(font-sizes) {
-                    $sizes: r-get(font-sizes);
-                    @if (type-of($sizes) == map) {
-                        $prefix: 'responsive-'+r-mq()+'-';
-                        @each $name, $size in $sizes {
-                            //noinspection SassScssResolvedByNameOnly
-                            @include register-font-size($prefix + $name, $size);
-                        }
-                    }
                 }
             }
         }
