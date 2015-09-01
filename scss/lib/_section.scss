@@ -8,8 +8,8 @@
     @include break();
     float: none;
     margin: 0 auto;
-    @if (mixin-exists(r-each-if)) {
-        //noinspection SassScssResolvedByNameOnly
+    //noinspection SassScssResolvedByNameOnly
+    @if (function-exists(is-responsive) and is-responsive()) {
         @include r-each-if(layout, layout) {
             @include container();
             @if (r-has(page-padding)) {
@@ -82,8 +82,8 @@
 // @param mixed $bg             Background for section
 @mixin r-section($key, $top: null, $bottom: null, $bg: null) {
     @include section($top, $bottom, $bg);
-    @if (mixin-exists(r-each)) {
-        //noinspection SassScssResolvedByNameOnly
+    //noinspection SassScssResolvedByNameOnly
+    @if (function-exists(is-responsive) and is-responsive()) {
         @include r-each() {
             @if (r-has($key + '/section') or r-has($key + '/layout')) {
                 @if (r-has($key + '/section')) {
