@@ -1,61 +1,140 @@
 @import "susy";
 
-$responsive-config: () !default;
-$responsive-default-mq: null !default;
 $responsive-base-font-size: 15px !default;
 
+$responsive-config: ();
+$responsive-default-id: null;
+$responsive-current-id: null;
 $responsive-is-initialized: false;
-$responsive-current-mq: null;
 
-// Get current media query Id within responsive-each()
+// Register responsive configuration
 //
-// @param boolean $fallback     true to fallback to default media query if there is no explicit current media query, false to return null in this case
+// @param string $id        Responsive configuration id
+// @param map $config       Responsive configuration
+// @param boolean $default  Mark this responsive configuration as default
+@mixin responsive-config($id, $config, $default: false) {
+    @if (type-of($id) != string) {
+        @error 'Responsive configuration id should be string';
+    }
+    @if (type-of($config) != map) {
+        @error 'Responsive configuration should be defined as a map';
+    }
+    $responsive-config: map-merge($responsive-config, ($id: $config)) !global;
+    @if ($default) {
+        @if ($responsive-default-id != null) {
+            @warn 'Default responsive configuration is already chosen for "' + $responsive-default-id + '"';
+        } @else {
+            $responsive-default-id: $id !global;
+        }
+    }
+}
+
+// Shorthand for responsive-config()
+@mixin r-config($id, $config, $default: false) {
+    @include responsive-config($id, $config, $default);
+}
+
+// Get normalized value of given responsive configuration id
+//
+// @param string|boolean|null $id   Responsive configuration id, one of:
+//                                  - string - responsive configuration id to check for validity and return
+//                                  - null or true - get current responsive configuration id if it is available,
+//                                    fallback to default responsive configuration id if there is no explicit current configuration
+//                                  - false - get current responsive configuration id if it is available,
+//                                    return null if there is no explicit current configuration
 // @return string|null
-@function responsive-current-mq($fallback: true) {
-    @if ($responsive-current-mq != null) {
-        @return $responsive-current-mq;
-    } @else if ($fallback) {
-        @return $responsive-default-mq;
+// noinspection CssInvalidFunction
+@function responsive-id($id: null) {
+    @if (type-of($id) == string) {
+        @if (responsive-has-config($id)) {
+            @return $id;
+        } @else {
+            @return null;
+        }
+    } @else if ($id == null or $id == true or $id == false) {
+        @if ($responsive-current-id != null) {
+            @return $responsive-current-id;
+        } @else if ($id == false) {
+            @return null;
+        } @else {
+            @return $responsive-default-id;
+        }
     } @else {
+        @error 'Unvalid type of responsive configuration id: ' + type-of($id);
         @return null;
     }
 }
 
-// Shorthand for responsive-current-mq()
-@function r-mq($fallback: true) {
-    @return responsive-current-mq($fallback);
+// Shorthand for responsive-id()
+@function r-id($id: null) {
+    @return responsive-id($id);
 }
 
-// Get list of available media queries
+// Get list of available responsive configuration ids
 //
-// @param map $config       Configuration map to get value from
 // @return list
-@function responsive-mq-list($config: $responsive-config)
-{
-    @return map-keys($config);
+@function responsive-get-ids() {
+    @return map-keys($responsive-config);
+}
+
+// Shorthand for responsive-get-ids()
+@function r-get-ids() {
+    @return responsive-get-ids();
+}
+
+// Check if there is responsive configuration with given id
+//
+// @param string $id            Responsive configuration id to check
+// @return boolean
+@function responsive-has-config($id) {
+    @return map-has-key($responsive-config, $id);
+}
+
+// Shorthand for responsive-has-config()
+@function r-has-config($id) {
+    @return responsive-has-config($id);
+}
+
+// Get responsive configuration for given (or current or default) responsive configuration
+//
+// @param string|boolean|null $id   Responsive configuration id (@see responsive-id())
+// @return map
+@function responsive-get-config($id: null) {
+    $id: responsive-id($id);
+    @if ($id == null) {
+        @error 'No responsive configuration id is given and no current configuration is available';
+        @return ();
+    } @else if (not responsive-has-config($id)) {
+        @error 'Unknown responsive configuration id: ' + $id;
+        @return ();
+    }
+    @return map-get($responsive-config, $id);
+}
+
+// Shorthand for responsive-get-config()
+@function r-get-config($id: null) {
+    @return responsive-get-config($id);
 }
 
 // Get configuration value from responsive config
 //
-// @param string $key       Configuration key name, multiple level keys are defined as a/b/c
-// @param mixed $default    Default value for given configuration key (can be skipped)
-// @param string $mq        Media query Id to get configuration for (can be passed instead of $default)
-// @param map $config       Configuration map to get value from
+// @param string $key               Configuration key name, multiple level keys are defined as a/b/c
+// @param mixed $default            Default value for given configuration key (can be skipped)
+// @param string|boolean|null $id   Responsive configuration id (@see responsive-id()) (can be passed instead of $default)
 // @return mixed
-//noinspection CssInvalidFunction
-@function responsive-get($key, $default: null, $mq: null, $config: $responsive-config) {
-    @if (not $mq) {
-        @if (map-has-key($config, $default)) {
-            $mq: $default;
+// noinspection CssInvalidFunction
+@function responsive-get($key, $default: null, $id: null) {
+    @if ($id == null) {
+        @if (responsive-has-config($default)) {
+            $id: $default;
             $default: null;
-        } @else {
-            $mq: r-mq();
         }
     }
+    $id: responsive-id($id);
     $full-key: $key;
     $result: $default;
-    @if (map-has-key($config, $mq)) {
-        $mqcfg: map-get($config, $mq);
+    @if (responsive-has-config($id)) {
+        $r-cfg: responsive-get-config($id);
         $parts: ();
         @while str-index($key, '/') != null {
             $parts: append($parts, str-slice($key, 1, str-index($key, '/') - 1));
@@ -65,10 +144,10 @@ $responsive-current-mq: null;
         $error: false;
         @each $p in $parts {
             @if (not $error) {
-                @if (type-of($mqcfg) == map) {
-                    @if (map-has-key($mqcfg, $p)) {
-                        $result: map-get($mqcfg, $p);
-                        $mqcfg: map-get($mqcfg, $p);
+                @if (type-of($r-cfg) == map) {
+                    @if (map-has-key($r-cfg, $p)) {
+                        $result: map-get($r-cfg, $p);
+                        $r-cfg: map-get($r-cfg, $p);
                     } @else {
                         $error: true;
                     }
@@ -76,42 +155,41 @@ $responsive-current-mq: null;
                     $error: true;
                 }
                 @if ($error) {
-                    $mqcfg: '___NO_MAP_IN_CONFIG___';
-                    @if (($key != parent) and (r-has(parent, $mq, $config)) and (map-has-key($config, r-get(parent, null, $mq, $config)))) {
-                        $result: r-get($key, $default, r-get(parent, null, $mq, $config), $config);
+                    $r-cfg: null;
+                    @if (($key != parent) and (responsive-has(parent, $id)) and (responsive-has-config(responsive-get(parent, null, $id)))) {
+                        $result: responsive-get($key, $default, responsive-get(parent, null, $id));
                     }
                     @if ($default == null) {
-                        @warn "Unavailable configuration path '" + $full-key + "' for media query '" + $mq + "'";
+                        @warn "Unavailable configuration path '" + $full-key + "' for responsive configuraion '" + $id + "'";
                     }
                     $result: $default;
                 }
             }
         }
     } @else {
-        @warn "Unknown media query id: " + $mq;
+        @warn "Unknown responsive configuraion id: " + $id;
     }
     @return $result;
 }
 
 // Shorthand for responsive-get()
-@function r-get($key, $default: null, $mq: null, $config: $responsive-config) {
-    @return responsive-get($key, $default, $mq, $config);
+@function r-get($key, $default: null, $id: null) {
+    @return responsive-get($key, $default, $id);
 }
 
 // Test if given configuration key is available in from responsive config
 //
-// @param string $key       Configuration key name, multiple level keys are defined as a/b/c
-// @param string $mq        Media query Id to get configuration for (can be passed instead of $default)
-// @param map $config       Configuration map to get value from
+// @param string $key               Configuration key name, multiple level keys are defined as a/b/c
+// @param string|boolean|null $id   Responsive configuration id (@see responsive-id())
 // @return boolean
-@function responsive-has($key, $mq: null, $config: $responsive-config) {
+@function responsive-has($key, $id: null) {
     $test: '___unavailable_key___';
-    @return (r-get($key, $test, $mq, $config) != $test);
+    @return (responsive-get($key, $test, $id) != $test);
 }
 
 // Shorthand for responsive-has()
-@function r-has($key, $mq: null, $config: $responsive-config) {
-    @return responsive-has($key, $mq, $config);
+@function r-has($key, $id: null) {
+    @return responsive-has($key, $id);
 }
 
 // Simplification of iteration over available media queries
@@ -120,29 +198,29 @@ $responsive-current-mq: null;
 //                          false to disable layout use
 //                          string to either specify configuration key of layout to use or explicit shorthand layout
 //                          list or map to define explicit layout
-// @param map $config       Configuration map to use
-@mixin responsive-each($layout: true, $config: $responsive-config, $if-key: null) {
-    @each $mq in map-keys($config) {
+// @param string $if-key    Apply media query configuration only if given key is exists in corresponding responsive configuration
+@mixin responsive-each($layout: true, $if-key: null) {
+    @each $id in responsive-get-ids() {
         $l: null;
-        @if ($layout == true and r-has(layout, null, $config)) {
-            $l: r-get(layout, null, null, $config);
+        @if ($layout == true and responsive-has(layout, $id)) {
+            $l: responsive-get(layout, $id);
         } @else if (type-of($layout) == string) {
-            @if (r-has($layout, null, $config)) {
-                $l: r-get($layout, null, null, $config);
+            @if (responsive-has($layout, $id)) {
+                $l: responsive-get($layout, $id);
             } @else {
                 $l: $layout;
             }
         } @else if (type-of($layout) == list or type-of($layout) == map) {
             $l: $layout;
         }
-        @if (($if-key == null) or (r-has($if-key, $mq, $config))) {
-            @if ($responsive-current-mq != null) {
-                @if ($responsive-current-mq == $mq) {
+        @if (($if-key == null) or (responsive-has($if-key, $id))) {
+            @if ($responsive-current-id != null) {
+                @if ($responsive-current-id == $id) {
                     @content;
                 }
             } @else {
-                $responsive-current-mq: $mq !global;
-                @include susy-breakpoint($mq) {
+                $responsive-current-id: $id !global;
+                @include susy-breakpoint($id) {
                     @if ($l) {
                         @include with-layout($l) {
                             @content;
@@ -151,44 +229,44 @@ $responsive-current-mq: null;
                         @content;
                     }
                 }
-                $responsive-current-mq: null !global;
+                $responsive-current-id: null !global;
             }
         }
     }
 }
 
 // Shorthand for responsive-each()
-@mixin r-each($layout: true, $config: $responsive-config, $if-key: null) {
-    @include responsive-each($layout, $config, $if-key) {
+@mixin r-each($layout: true, $if-key: null) {
+    @include responsive-each($layout, $if-key) {
         @content;
     }
 }
 
 // Shorthand for responsive-each() with mandatory $if-key
-@mixin r-each-if($if-key, $layout: true, $config: $responsive-config) {
-    @include responsive-each($layout, $config, $if-key) {
+@mixin r-each-if($if-key, $layout: true) {
+    @include responsive-each($layout, $if-key) {
         @content;
     }
 }
 
-// Initialize $susy and $susy-media based on information from $responsive-config
+// Initialize $susy and $susy-media based on information from responsive configuration
 @mixin responsive-init() {
     @if (not $responsive-is-initialized) {
-        @if (length($responsive-config) > 0) {
-            @if (not $responsive-default-mq) {
-                @warn 'Default media query key is not defined in $responsive-default-mq';
+        @if (length(responsive-get-ids()) > 0) {
+            @if ($responsive-default-id == null) {
+                @warn 'Default responsive configuration is not defined';
             }
             @if (length($susy-media) == 0) {
                 $susy-media: () !global;
-                @each $mq in map-keys($responsive-config) {
-                    $query: r-get(media-query, $mq, $config: $responsive-config);
+                @each $id in responsive-get-ids() {
+                    $query: responsive-get(media-query, $id);
                     @if ($query) {
-                        $susy-media: map-merge($susy-media, ($mq: $query)) !global;
+                        $susy-media: map-merge($susy-media, ($id: $query)) !global;
                     }
                 }
             }
             @if (length($susy) == 0) {
-                $layout: r-get(layout, $config: $responsive-config);
+                $layout: responsive-get(layout);
                 @if ($layout != null) {
                     $susy: $layout !global;
                 }
@@ -203,4 +281,8 @@ $responsive-current-mq: null;
     }
 }
 
-@include responsive-init();
+// Determine if responsive module can be used
+@function is-responsive()
+{
+    @return (length($responsive-config) > 0 and $responsive-is-initialized);
+}
