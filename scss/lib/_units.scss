@@ -27,6 +27,8 @@ $use-rem: true !default;
 @function v($value) {
     @if ((type-of($value) == number) and unitless($value) and $value != 0) {
         @return spacer($value);
+    } @else if (type-of($value) == number and unit($value) == '%') {
+        @return  $value;
     } @else if ($use-rem and (unit($value) != 'rem')) {
         @return rv($value);
     } @else if ((not $use-rem) and (unit($value) != 'px')) {
