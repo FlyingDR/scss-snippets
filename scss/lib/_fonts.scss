@@ -38,10 +38,11 @@ $font-default-properties: (
 
 // Parse given font string into set of CSS properties and their values
 //
-// @param list $font  Font values list to parse
+// @param list $font        Font values list to parse
+// @param boolean $resolve  true to resolve values of parsed font properties, false to just resolve property names but leave values as is
 // @return map
 // noinspection SassScssResolvedByNameOnly
-@function parse-font($font) {
+@function parse-font($font, $resolve: true) {
     @if (type-of($font) == map) {
         // Treat map argument as "already parsed font properties"
         @return $font;
@@ -55,18 +56,32 @@ $font-default-properties: (
     $letter-spacing-units: px, em, rem;
     $added: '';
     $properties: ();
+    $is-responsive: function-exists(is-responsive) and is-responsive();
     @each $item in $font {
         $ik: null;
         $iv: $item;
+        $r-size-exists: false;
+        $r-fs-key: 'font-sizes/' + $item;
+        @if (not index($added, font-size) and $is-responsive and not $resolve) {
+            @each $id in responsive-get-ids() {
+                @if (not $r-size-exists) {
+                    @if (r-has($r-fs-key, $id)) {
+                        $r-size-exists: true;
+                    }
+                }
+            }
+        }
         @if (not index($added, font-family) and map-has-key($font-families, $item)) {
             $ik: font-family;
             $iv: join(map-get($font-families, $item), (), comma);
-        } @else if (not index($added, font-size) and function-exists(r-mq) and map-has-key($font-sizes, 'responsive-' + r-mq() + '-' + $item)) {
+        } @else if (not index($added, font-size) and $is-responsive and r-id(false) and r-has($r-fs-key, r-id())) {
             $ik: font-size;
-            $iv: map-get($font-sizes, 'responsive-' + r-mq() + '-' + $item);
-        } @else if (not index($added, font-size) and global-variable-exists(responsive-default-mq) and map-has-key($font-sizes, 'responsive-' + $responsive-default-mq + '-' + $item)) {
+            $iv: r-get($r-fs-key, null, r-id());
+        } @else if (not index($added, font-size) and $is-responsive and r-id(false) and r-has($r-fs-key, $responsive-default-id)) {
             $ik: font-size;
-            $iv: map-get($font-sizes, 'responsive-' + $responsive-default-mq + '-' + $item);
+            $iv: r-get($r-fs-key, null, $responsive-default-id);
+        } @else if (not index($added, font-size) and $is-responsive and not $resolve and $r-size-exists) {
+            $ik: font-size;
         } @else if (not index($added, font-size) and index($named-font-sizes, $item)) {
             $ik: font-size;
         } @else if (not index($added, font-size) and map-has-key($font-sizes, $item)) {
@@ -94,6 +109,9 @@ $font-default-properties: (
             @if (($ik == font-size) and (type-of($iv) == number) and (index(px rem, unit($iv)))) {
                 $iv: v($iv);
             }
+            @if (not $resolve) {
+                $iv: $item;
+            }
             $properties: map-merge($properties, ($ik: $iv));
             $added: append($added, $ik);
         }
@@ -105,7 +123,7 @@ $font-default-properties: (
 //
 // @param list|map $font      Either list of font values list to parse or already parsed list of font properties
 // @param list $important     List of font properties that should be marked as important
-// @param map $modifications    Map of font properties modifications to apply to given font values
+// @param map $modifications  Map of font properties modifications to apply to given font values
 @mixin font($font, $important: '', $modifications: null) {
     $font: parse-font($font);
     @if (type-of($modifications) == map) {
@@ -117,6 +135,28 @@ $font-default-properties: (
         } @else {
             #{$prop}: $value;
 
+        }
+    }
+}
+
+// Responsive version of font() mixin
+// Works exactly like usual font(), but adds media queries for font-size property
+// if there is responsive configuration for used named font size
+//
+// @param list|map $font      Either list of font values list to parse or already parsed list of font properties
+// @param list $important     List of font properties that should be marked as important
+// @param map $modifications  Map of font properties modifications to apply to given font values
+@mixin r-font($font, $important: '', $modifications: null) {
+    @include font($font, $important, $modifications);
+    //noinspection SassScssResolvedByNameOnly
+    @if (function-exists(is-responsive) and is-responsive()) {
+        $properties: parse-font($font, false);
+        @if (map-has-key($properties, font-size)) {
+            $font-size: map-get($properties, font-size);
+            $key: 'font-sizes/' + $font-size;
+            @include r-each-if($key) {
+                @include font($font-size);
+            }
         }
     }
 }
