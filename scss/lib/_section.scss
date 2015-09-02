@@ -1,12 +1,12 @@
 @import "susy";
 @import "spacer";
-@import "box";
 
 %page-section {
     @include container();
     @include full();
     @include break();
     float: none;
+    padding: 0;
     margin: 0 auto;
     //noinspection SassScssResolvedByNameOnly
     @if (function-exists(is-responsive) and is-responsive()) {
@@ -84,29 +84,26 @@
     @include section($top, $bottom, $bg);
     //noinspection SassScssResolvedByNameOnly
     @if (function-exists(is-responsive) and is-responsive()) {
-        @include r-each() {
-            @if (r-has($key + '/section') or r-has($key + '/layout')) {
-                @if (r-has($key + '/section')) {
-                    @include section(r-get($key + '/section'));
-                }
-                @if (r-has($key + '/layout')) {
-                    @include with-layout(r-get($key + '/layout')) {
-                        @content;
+        @include r-each-if($key) {
+            $section: r-get($key);
+            @if (type-of($section) == map) {
+                @each $prop, $value in $section {
+                    @if ($prop == section) {
+                        @include section($value);
+                    } @else if ($prop == layout) {
+                        @include with-layout($value) {
+                            @content;
+                        }
+                    } @else if($prop == span) {
+                        @include span($value);
+                    } @else {
+                        #{$prop}: v($value);
                     }
                 }
-                @if (r-has($key + '/span')) {
-                    @include span(r-get($key + '/span'));
-                }
-                @if (r-has($key + '/margin')) {
-                    @include margin(r-get($key + '/margin'));
-                }
-                @if (r-has($key + '/padding')) {
-                    @include padding(r-get($key + '/padding'));
-                }
+             } @else if (type-of($section) == list) {
+                @include section($section);
             } @else {
-                @if (r-has($key)) {
-                    @include section(r-get($key));
-                }
+                @error 'Invalid type "' + type-of($section) + '" of section definition for responsive configuration key "' + $key + '" at "' + r-id() + '"';
             }
         }
     }
