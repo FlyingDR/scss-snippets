@@ -24,18 +24,40 @@ $use-rem: true !default;
     }
 }
 
-@function v($value) {
-    @if ((type-of($value) == number) and unitless($value) and $value != 0) {
-        @return spacer($value);
-    } @else if (type-of($value) == number and unit($value) == '%') {
-        @return  $value;
-    } @else if ($use-rem and (unit($value) != 'rem')) {
-        @return rv($value);
-    } @else if ((not $use-rem) and (unit($value) != 'px')) {
-        @return px($value);
-    } @else {
-        @return $value;
+@function parse-important($value) {
+    $important: false;
+    @if (type-of($value) == list and index($value, !important) == length($value)) {
+        $important: true;
+        $nv: ();
+        @for $i from 1 through length($value) - 1 {
+            $nv: append($nv, nth($value, $i));
+        }
+        $value: $nv;
     }
+    @return ($value, $important);
+}
+
+@function v($value) {
+    $parsed: parse-important($value);
+    $value: nth($parsed, 1);
+    $important: nth($parsed, 2);
+    $result: ();
+    @each $v in $value {
+        @if ((type-of($v) == number) and unitless($v) and $v != 0) {
+            $v: spacer($v);
+        } @else if (type-of($v) == number and unit($v) == '%') {
+            $v: $v;
+        } @else if ($use-rem and (unit($v) != 'rem')) {
+            $v: rv($v);
+        } @else if ((not $use-rem) and (unit($v) != 'px')) {
+            $v: px($v);
+        }
+        $result: append($result, $v);
+    }
+    @if ($important) {
+        $result: append($result, !important);
+    }
+    @return $result;
 }
 
 @function uround($value) {
