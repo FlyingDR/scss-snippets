@@ -3,6 +3,10 @@
 
 $use-rem: true !default;
 
+// Convert given value into rem units
+//
+// @param number $value
+// @return number
 @function rv($value) {
     @if (unit($value) == '') {
         @if ($value != 0) {
@@ -13,6 +17,10 @@ $use-rem: true !default;
     @return convert-length($value, rem);
 }
 
+// Convert given value into px units
+//
+// @param number $value
+// @return number
 @function px($value) {
     $unit: unit($value);
     @if ($unit == '') {
@@ -24,6 +32,10 @@ $use-rem: true !default;
     }
 }
 
+// Parse given value and determine if it contains !important modifier
+//
+// @param string|number|list $value     Value to parse
+// @return list ($value, $important)
 @function parse-important($value) {
     $important: false;
     @if (type-of($value) == list and index($value, !important) == length($value)) {
@@ -33,33 +45,55 @@ $use-rem: true !default;
             $nv: append($nv, nth($value, $i));
         }
         $value: $nv;
+    } @else if (type-of($value) == string and str-slice($value, -11) == ' !important') {
+        $important: true;
+        $value: str-slice($value, 0, -11);
+        @while str-slice($value, -1) == ' ' {
+            $value: str-slice($value, 0, -2);
+        }
     }
     @return ($value, $important);
 }
 
+// Normalize given value and convert its units
+//
+// @param string|number|list $value     Value to normalize
+// @return string|number|list $value
 @function v($value) {
     $parsed: parse-important($value);
     $value: nth($parsed, 1);
     $important: nth($parsed, 2);
     $result: ();
     @each $v in $value {
-        @if ((type-of($v) == number) and unitless($v) and $v != 0) {
-            $v: spacer($v);
-        } @else if (type-of($v) == number and unit($v) == '%') {
-            $v: $v;
-        } @else if ($use-rem and (unit($v) != 'rem')) {
-            $v: rv($v);
-        } @else if ((not $use-rem) and (unit($v) != 'px')) {
-            $v: px($v);
+        @if (type-of($v) == number) {
+            @if (unitless($v) and $v != 0) {
+                $v: spacer($v);
+            } @else if (unit($v) == '%') {
+                $v: $v;
+            } @else if ($use-rem and (unit($v) != 'rem')) {
+                $v: rv($v);
+            } @else if ((not $use-rem) and (unit($v) != 'px')) {
+                $v: px($v);
+            }
         }
         $result: append($result, $v);
     }
     @if ($important) {
         $result: append($result, !important);
     }
-    @return $result;
+    @if (length($result) == 0) {
+        @return null;
+    } @else if (length($result) == 1) {
+        @return nth($result, 1);
+    } @else {
+        @return $result;
+    }
 }
 
+// Perform value rounding with respect to possible use of rem units
+//
+// @param number $value
+// @return number
 @function uround($value) {
     @if (not $use-rem) {
         $value: round($value);
@@ -67,6 +101,12 @@ $use-rem: true !default;
     @return $value;
 }
 
+// Calculate additional offset required to center element of given $size within container of $total size
+//
+// @param number $total         Total container size
+// @param number $size          Size of element to center
+// @param number $compensation  Additional compensation to apply
+// @return number
 @function centered($total, $size, $compensation: 0) {
     @return uround((v($total) - v($size)) / 2) + v($compensation);
 }
