@@ -220,7 +220,17 @@ $responsive-is-initialized: false;
                 }
             } @else {
                 $responsive-current-id: $id !global;
-                @include susy-breakpoint($id) {
+                @if ($responsive-current-id != $responsive-default-id) {
+                    @include susy-breakpoint($id) {
+                        @if ($l) {
+                            @include with-layout($l) {
+                                @content;
+                            }
+                        } @else {
+                            @content;
+                        }
+                    }
+                } @else {
                     @if ($l) {
                         @include with-layout($l) {
                             @content;
