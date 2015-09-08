@@ -96,8 +96,16 @@
                         }
                     } @else if($prop == span) {
                         @include span($value);
-                    } @else {
+                    } @else if (index(margin padding, $prop)) {
                         #{$prop}: v($value);
+                    } @else if ($prop == css) {
+                        @if (type-of($value) == map) {
+                            @each $cp, $cv in $value {
+                                #{$cp}: v($cv);
+                            }
+                        } @else {
+                            @error 'Additional CSS properties for r-section() should be defined as map';
+                        }
                     }
                 }
              } @else if (type-of($section) == list) {
