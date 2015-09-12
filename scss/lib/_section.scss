@@ -49,25 +49,15 @@
             @error "section() argument should contain 1..3 items if passed as list of values";
         }
     }
+    $prop: margin;
+    @if ($bg != null) {
+        $prop: padding;
+    }
     @if ($top != null) {
-        @if (type-of($top) == number) {
-            $top: spacer($top);
-        }
-        @if ($bg) {
-            padding-top: $top;
-        } @else {
-            margin-top: $top;
-        }
+        #{$prop}-top: v($top);
     }
     @if ($bottom != null) {
-        @if (type-of($bottom) == number) {
-            $bottom: spacer($bottom);
-        }
-        @if ($bg) {
-            padding-bottom: $bottom;
-        } @else {
-            margin-bottom: $bottom;
-        }
+        #{$prop}-bottom: v($bottom);
     }
     @if ($bg != null) {
         background: $bg;
