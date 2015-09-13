@@ -81,10 +81,6 @@
                     @if ($prop == section) {
                         @include section($value);
                     } @else if ($prop == layout) {
-                        @include with-layout($value) {
-                            @content;
-                        }
-                    } @else if($prop == span) {
                         @include span($value);
                     } @else if (index(margin padding, $prop)) {
                         #{$prop}: v($value);
