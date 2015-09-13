@@ -220,7 +220,7 @@ $responsive-is-initialized: false;
                 }
             } @else {
                 $responsive-current-id: $id !global;
-                @if ($responsive-current-id != $responsive-default-id) {
+                @if (($responsive-current-id != $responsive-default-id) and (responsive-has(media-query, $id))) {
                     @include susy-breakpoint($id) {
                         @if ($l) {
                             @include with-layout($l) {
@@ -269,16 +269,16 @@ $responsive-is-initialized: false;
             @if (length($susy-media) == 0) {
                 $susy-media: () !global;
                 @each $id in responsive-get-ids() {
-                    $query: responsive-get(media-query, $id);
-                    @if ($query) {
-                        $susy-media: map-merge($susy-media, ($id: $query)) !global;
+                    @if (responsive-has(media-query, $id)) {
+                        $susy-media: map-merge($susy-media, ($id: responsive-get(media-query, $id))) !global;
                     }
                 }
             }
             @if (length($susy) == 0) {
-                $layout: responsive-get(layout);
-                @if ($layout != null) {
-                    $susy: $layout !global;
+                @if (responsive-has(layout) and responsive-get(layout) != null) {
+                    $susy: responsive-get(layout) !global;
+                } @else {
+                    @warn 'No default responsive layout is defined';
                 }
             }
         }
