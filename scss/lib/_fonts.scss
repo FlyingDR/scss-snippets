@@ -77,7 +77,7 @@ $font-default-properties: (
         } @else if (not index($added, font-size) and $is-responsive and r-id(false) and r-has($r-fs-key, r-id())) {
             $ik: font-size;
             $iv: r-get($r-fs-key, null, r-id());
-        } @else if (not index($added, font-size) and $is-responsive and r-id(false) and r-has($r-fs-key, $responsive-default-id)) {
+        } @else if (not index($added, font-size) and $is-responsive and r-id(true) and r-has($r-fs-key, $responsive-default-id)) {
             $ik: font-size;
             $iv: r-get($r-fs-key, null, $responsive-default-id);
         } @else if (not index($added, font-size) and $is-responsive and not $resolve and $r-size-exists) {
