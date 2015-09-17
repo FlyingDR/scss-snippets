@@ -282,11 +282,38 @@ $responsive-is-initialized: false;
         }
         @include global-box-sizing();
         $responsive-is-initialized: true !global;
+        //noinspection SassScssResolvedByNameOnly
+        @each $id in responsive-get-ids() {
+            @if (responsive-has(resolutions, $id)) {
+                @if ($id == $responsive-default-id) {
+                    @if (function-exists(v) and global-variable-exists(units-rem-font-size)) {
+                        $query: ();
+                        @if (responsive-has(media-query, $id)) {
+                            $query: susy-get-media(responsive-get(media-query, $id));
+                            $query: susy-parse-media($query);
+                        }
+                        @each $factor in responsive-get(resolutions, null, $id) {
+                            @if (type-of($factor) == number and current-unit(true) == rem) {
+                                $cq: map-merge($query, (min-resolution: 1dppx * $factor));
+                                @include susy-breakpoint($cq) {
+                                    html, body {
+                                        font-size: v($units-rem-font-size, false) / strip-units($factor);
+                                    }
+                                }
+                            }
+                        }
+                    } @else {
+                        @warn 'Responsive resolutions declaration requires "units" module to be included';
+                    }
+                } @else {
+                    @warn 'Responsive resolutions should be defined in default responsive configuration';
+                }
+            }
+        }
     }
 }
 
 // Determine if responsive module can be used
-@function is-responsive()
-{
+@function is-responsive() {
     @return (length($responsive-config) > 0 and $responsive-is-initialized);
 }
