@@ -69,6 +69,26 @@ $units-initialized: false;
     @return u($value);
 }
 
+// Get information about current unit
+//
+// @param boolean $get-unit     true to get current unit name (e.g. "px"), false to get base number of current unit (e.g. 1px) (default)
+// @return number|string
+@function current-unit($get-unit: false) {
+    @if ($units-use-rem) {
+        @if ($get-unit) {
+            @return rem;
+        } @else {
+            @return 1rem;
+        }
+    } @else {
+        @if ($get-unit) {
+            @return px;
+        } @else {
+            @return 1px;
+        }
+    }
+}
+
 // Initialize units module
 //
 // @param boolean|string $use-rem   true or "rem" to use rem units, false or "px" to use px units
