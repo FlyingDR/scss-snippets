@@ -1,7 +1,5 @@
 @import "susy";
 
-$responsive-base-font-size: 15px !default;
-
 $responsive-config: ();
 $responsive-default-id: null;
 $responsive-current-id: null;
@@ -281,10 +279,6 @@ $responsive-is-initialized: false;
                     @warn 'No default responsive layout is defined';
                 }
             }
-        }
-        $base-font-size: $responsive-base-font-size !global;
-        html, body {
-            font-size: $base-font-size;
         }
         @include global-box-sizing();
         $responsive-is-initialized: true !global;

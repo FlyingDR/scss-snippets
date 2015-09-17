@@ -1,3 +1,48 @@
+@import "units";
+
+// Parse given value and determine if it contains !important modifier
+//
+// @param string|number|list $value     Value to parse
+// @return list ($value, $important)
+@function parse-important($value) {
+    $important: false;
+    @if (type-of($value) == list and index($value, !important) == length($value)) {
+        $important: true;
+        $nv: ();
+        @for $i from 1 through length($value) - 1 {
+            $nv: append($nv, nth($value, $i));
+        }
+        $value: $nv;
+    } @else if (type-of($value) == string and str-slice($value, -11) == ' !important') {
+        $important: true;
+        $value: str-slice($value, 0, -11);
+        @while str-slice($value, -1) == ' ' {
+            $value: str-slice($value, 0, -2);
+        }
+    }
+    @return ($value, $important);
+}
+
+// Perform value rounding with respect to possible use of rem units
+//
+// @param number $value
+// @return number
+@function uround($value) {
+    @if (not $units-use-rem) {
+        $value: round($value);
+    }
+    @return $value;
+}
+
+// Calculate additional offset required to center element of given $size within container of $total size
+//
+// @param number $total         Total container size
+// @param number $size          Size of element to center
+// @param number $compensation  Additional compensation to apply
+// @return number
+@function centered($total, $size, $compensation: 0) {
+    @return uround((v($total) - v($size)) / 2) + v($compensation);
+}
 
 // Convert percent value into number
 //
@@ -15,4 +60,19 @@
         $i: $i / 100;
     }
     @return $i;
+}
+
+// Convert given unicode character code into unicode char reference
+// unicode("e655"); // "\e655"
+//
+// @source - [@Stephn-R](https://github.com/sass/sass/issues/1395#issuecomment-57483844)
+// @description converts 1 or more characters into a unicode
+// @markup {scss}
+// @param string $str   Unicode character code to convert
+// @return string
+@function unicode($str) {
+    @if (str-slice($str, 1, 1) != str-slice("\\", 1, 1)) {
+        $str: unquote(str-insert($str, str-slice("\\", 1, 1), 1));
+    }
+    @return unquote("\"")+$str+unquote("\"")
 }
