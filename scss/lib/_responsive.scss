@@ -297,7 +297,7 @@ $responsive-is-initialized: false;
                                 $cq: map-merge($query, (min-resolution: 1dppx * $factor));
                                 @include susy-breakpoint($cq) {
                                     html, body {
-                                        font-size: v($units-rem-font-size, false) / strip-units($factor);
+                                        font-size: v($units-rem-font-size, px) / strip-units($factor);
                                     }
                                 }
                             }

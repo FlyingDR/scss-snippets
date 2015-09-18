@@ -28,7 +28,7 @@
 // @param number $value
 // @return number
 @function uround($value) {
-    @if (not $units-use-rem) {
+    @if (current-unit(true) == px) {
         $value: round($value);
     }
     @return $value;

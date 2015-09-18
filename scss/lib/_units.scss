@@ -1,7 +1,7 @@
 @import "compass/typography/units";
 @import "functions";
 
-$units-use-rem: false !default;
+$units-current-unit: px !default;
 $units-rem-font-size: 16px !default;
 $units-unit-size: 20px !default;
 $units-initialized: false;
@@ -9,15 +9,15 @@ $units-initialized: false;
 // Normalize given value and convert its units if necessary
 //
 // @param string|number|list $value     Value to normalize
-// @param boolean|null $use-rem         Override rem usage for this value
+// @param boolean|null $unit            Override current unit for this value
 // @return string|number|list $value
-@function v($value, $use-rem: null) {
+@function v($value, $unit: null) {
     $parsed: parse-important($value);
     $value: nth($parsed, 1);
     $important: nth($parsed, 2);
     $result: ();
-    @if ($use-rem == null) {
-        $use-rem: $units-use-rem;
+    @if ($unit == null) {
+        $unit: $units-current-unit;
     }
     @each $v in $value {
         @if (type-of($v) == number) {
@@ -26,10 +26,8 @@ $units-initialized: false;
                 $v: u($v);
             } @else if ($v == 0 or not index((px, rem), unit($v))) {
                 $v: $v;
-            } @else if ($use-rem and (unit($v) != rem)) {
-                $v: convert-length($v, rem);
-            } @else if ((not $use-rem) and (unit($v) != px)) {
-                $v: convert-length($v, px);
+            } @else if (unit($v) != $unit) {
+                $v: convert-length($v, $unit);
             }
         }
         $result: append($result, $v);
@@ -48,25 +46,26 @@ $units-initialized: false;
 
 // Define length in "units"
 //
-// @param number $value    Amount of units to use
+// @param number $value         Amount of units to use
+// @param boolean|null $unit    Override current unit for this value
 // @return number
-@function u($value: 1) {
+@function u($value: 1, $unit: null) {
     @if ($value == 0) {
         @return 0;
     }
     @if (type-of($value) == number) {
         @if (not unitless($value)) {
-            $value: v($value, false) / 1px;
+            $value: v($value, px) / 1px;
         }
-        @return v(uround($units-unit-size * $value));
+        @return v(uround($units-unit-size * $value), $unit);
     } @else {
         @error 'Only number values are accepted for u()';
     }
 }
 
 // Backward compatible alias for u() function
-@function spacer($value: 1) {
-    @return u($value);
+@function spacer($value: 1, $unit: null) {
+    @return u($value, $unit);
 }
 
 // Get information about current unit
@@ -74,7 +73,7 @@ $units-initialized: false;
 // @param boolean $get-unit     true to get current unit name (e.g. "px"), false to get base number of current unit (e.g. 1px) (default)
 // @return number|string
 @function current-unit($get-unit: false) {
-    @if ($units-use-rem) {
+    @if ($units-current-unit == px) {
         @if ($get-unit) {
             @return rem;
         } @else {
@@ -91,16 +90,28 @@ $units-initialized: false;
 
 // Initialize units module
 //
-// @param boolean|string $use-rem   true or "rem" to use rem units, false or "px" to use px units
+// @param string $unit              Unit to use (px or rem)
 // @param number $rem-font-size     Base size for rem unit
 // @param number $unit-size         Size of single "unit" for u() function
-@mixin units-init($use-rem: $units-use-rem, $rem-font-size: $units-rem-font-size, $unit-size: $units-unit-size) {
+@mixin units-init($unit: $units-current-unit, $rem-font-size: $units-rem-font-size, $unit-size: $units-unit-size) {
     @if (not $units-initialized) {
-        $units-use-rem: ($use-rem == true or $use-rem == rem) !global;
-        $units-rem-font-size: $rem-font-size !global;
-        $units-unit-size: $unit-size !global;
+        @if (index(px rem, $unit)) {
+            $units-current-unit: $unit !global;
+        } @else {
+            @error 'Only "px" or "rem" units are supported for "units" module';
+        }
+        @if (type-of($rem-font-size) == number and unit($rem-font-size) == px) {
+            $units-rem-font-size: $rem-font-size !global;
+        } @else {
+            @warn '$rem-font-size should be set in px';
+        }
+        @if (type-of($unit-size) == number and unit($unit-size) == px) {
+            $units-unit-size: $unit-size !global;
+        } @else {
+            @warn '$unit-size should be set in px';
+        }
         $base-font-size: $units-rem-font-size !global;
-        @if ($units-use-rem) {
+        @if ($units-current-unit) {
             html, body {
                 font-size: $units-rem-font-size;
             }
