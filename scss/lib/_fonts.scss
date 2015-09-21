@@ -130,11 +130,13 @@ $font-default-properties: (
         $font: map-merge($font, $modifications);
     }
     @each $prop, $value in $font {
-        @if (index($important, $prop) != null) {
-            #{$prop}: $value !important;
-        } @else {
-            #{$prop}: $value;
+        @if ($value != null) {
+            @if (index($important, $prop) != null) {
+                #{$prop}: $value !important;
+            } @else {
+                #{$prop}: $value;
 
+            }
         }
     }
 }
@@ -146,17 +148,28 @@ $font-default-properties: (
 // @param list|map $font      Either list of font values list to parse or already parsed list of font properties
 // @param list $important     List of font properties that should be marked as important
 // @param map $modifications  Map of font properties modifications to apply to given font values
+//noinspection SassScssResolvedByNameOnly
 @mixin r-font($font, $important: '', $modifications: null) {
-    @include font($font, $important, $modifications);
-    //noinspection SassScssResolvedByNameOnly
-    @if (function-exists(is-responsive) and is-responsive()) {
-        $properties: parse-font($font, false);
-        @if (map-has-key($properties, font-size)) {
-            $font-size: map-get($properties, font-size);
-            $key: 'font-sizes/' + $font-size;
-            @include r-each-if($key) {
-                @include font($font-size);
+    $responsive: (function-exists(is-responsive) and is-responsive());
+    $font-size: null;
+    $properties: parse-font($font, false);
+    @if (map-has-key($properties, font-size)) {
+        $font-size: map-get($properties, font-size);
+        @if (not map-has-key($font-sizes, $font-size)) {
+            // Font size is defined in responsive configuration, avoid duplicated font-size rendering
+            @if (type-of($modifications) != map) {
+                $modifications: ();
             }
+            @if (not map-has-key($modifications, font-size)) {
+                $modifications: map-merge($modifications, (font-size: null));
+            }
+        }
+    }
+    @include font($font, $important, $modifications);
+    @if ($responsive) {
+        $key: 'font-sizes/' + $font-size;
+        @include r-each-if($key) {
+            @include font($font-size);
         }
     }
 }
