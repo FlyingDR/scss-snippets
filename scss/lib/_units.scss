@@ -73,7 +73,7 @@ $units-initialized: false;
 // @param boolean $get-unit     true to get current unit name (e.g. "px"), false to get base number of current unit (e.g. 1px) (default)
 // @return number|string
 @function current-unit($get-unit: false) {
-    @if ($units-current-unit == px) {
+    @if ($units-current-unit == rem) {
         @if ($get-unit) {
             @return rem;
         } @else {
