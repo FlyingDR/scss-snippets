@@ -1,26 +1,50 @@
 @import "susy";
 
 $responsive-config: ();
+$responsive-config-parent: ();
+$responsive-abstract-configurations: ();
 $responsive-default-id: null;
 $responsive-current-id: null;
+$responsive-get-original-id: null;
+$responsive-get-nesting-level: 0;
 $responsive-is-initialized: false;
 
 // Register responsive configuration
 //
 // @param string $id        Responsive configuration id
+// @param string $parent    Parent responsive configuration id (can be skipped)
 // @param map $config       Responsive configuration
+// @param boolean $abstract Mark this responsive configuration as abstract, it will not be used into responsive-each() iteration
 // @param boolean $default  Mark this responsive configuration as default
-@mixin responsive-config($id, $config, $default: false) {
+@mixin responsive-config($id, $parent: null, $config: null, $abstract: false, $default: false) {
+    @if (type-of($parent) == map) {
+        $default: $abstract;
+        $abstract: $config;
+        $config: $parent;
+        $parent: null;
+    }
     @if (type-of($id) != string) {
         @error 'Responsive configuration id should be string';
     }
     @if (type-of($config) != map) {
         @error 'Responsive configuration should be defined as a map';
     }
+    @if ($parent != null) {
+        @if ($default and not index($responsive-abstract-configurations, $parent)) {
+            @error 'Default responsive configuration can\'t have non-abstract parent configuration';
+        } @else if (map-has-key($responsive-config, $parent)) {
+            $responsive-config-parent: map-merge($responsive-config-parent, ($id: $parent)) !global;
+        } @else {
+            @error 'Unknown parent responsive configuration id "#{$parent}" is given for responsive configuration "#{$id}"';
+        }
+    }
     $responsive-config: map-merge($responsive-config, ($id: $config)) !global;
+    @if ($abstract) {
+        $responsive-abstract-configurations: append($responsive-abstract-configurations, $id) !global;
+    }
     @if ($default) {
         @if ($responsive-default-id != null) {
-            @warn 'Default responsive configuration is already chosen for "' + $responsive-default-id + '"';
+            @warn 'Default responsive configuration is already chosen for "#{$responsive-default-id}", selected again for "#{$id}"';
         } @else {
             $responsive-default-id: $id !global;
         }
@@ -28,8 +52,8 @@ $responsive-is-initialized: false;
 }
 
 // Shorthand for responsive-config()
-@mixin r-config($id, $config, $default: false) {
-    @include responsive-config($id, $config, $default);
+@mixin r-config($id, $parent: null, $config: null, $abstract: false, $default: false) {
+    @include responsive-config($id, $parent, $config, $abstract, $default);
 }
 
 // Get normalized value of given responsive configuration id
@@ -58,7 +82,7 @@ $responsive-is-initialized: false;
             @return $responsive-default-id;
         }
     } @else {
-        @error 'Unvalid type of responsive configuration id: ' + type-of($id);
+        @error 'Unvalid type of responsive configuration id: #{type-of($id)}';
         @return null;
     }
 }
@@ -66,6 +90,27 @@ $responsive-is-initialized: false;
 // Shorthand for responsive-id()
 @function r-id($id: null) {
     @return responsive-id($id);
+}
+
+// Determine if there is parent responsive configuration id for given id
+//
+// @param string|boolean|null $id   Responsive configuration id, @see responsive-id()
+// @return boolean
+@function responsive-has-parent-id($id) {
+    $id: responsive-id($id);
+    @return map-has-key($responsive-config-parent, $id);
+}
+
+// Get id of parent responsive configuration id for given id
+//
+// @param string|boolean|null $id   Responsive configuration id, @see responsive-id()
+// @return string|null
+@function responsive-get-parent-id($id) {
+    @if (responsive-has-parent-id($id)) {
+        @return map-get($responsive-config-parent, responsive-id($id));
+    } @else {
+        @return null;
+    }
 }
 
 // Get list of available responsive configuration ids
@@ -103,7 +148,7 @@ $responsive-is-initialized: false;
         @error 'No responsive configuration id is given and no current configuration is available';
         @return ();
     } @else if (not responsive-has-config($id)) {
-        @error 'Unknown responsive configuration id: ' + $id;
+        @error 'Unknown responsive configuration id: #{$id}';
         @return ();
     }
     @return map-get($responsive-config, $id);
@@ -118,7 +163,7 @@ $responsive-is-initialized: false;
 //
 // @param string $key               Configuration key name, multiple level keys are defined as a/b/c
 // @param mixed $default            Default value for given configuration key (can be skipped)
-// @param string|boolean|null $id   Responsive configuration id (@see responsive-id()) (can be passed instead of $default)
+// @param string|boolean|null $id   Responsive configuration id (@see responsive-id())
 // @return mixed
 // noinspection CssInvalidFunction
 @function responsive-get($key, $default: null, $id: null) {
@@ -128,6 +173,16 @@ $responsive-is-initialized: false;
             $default: null;
         }
     }
+    //$op: 'GET';
+    @if ($responsive-get-nesting-level == 0) {
+        $responsive-get-original-id: $id !global;
+        //@if ($default=='___unavailable_key___') {
+        //    $op: 'HAS';
+        //}
+        //$op: '#{$op}[#{$responsive-get-nesting-level}]';
+        //@debug ('#{$op} =>', $key, $default, $id, responsive-id($id));
+    }
+    $responsive-get-nesting-level: ($responsive-get-nesting-level + 1) !global;
     $id: responsive-id($id);
     $full-key: $key;
     $result: $default;
@@ -154,18 +209,25 @@ $responsive-is-initialized: false;
                 }
                 @if ($error) {
                     $r-cfg: null;
-                    @if (($key != parent) and (responsive-has(parent, $id)) and (responsive-has-config(responsive-get(parent, null, $id)))) {
-                        $result: responsive-get($key, $default, responsive-get(parent, null, $id));
+                    //@debug ('#{$op} fallback=>', $responsive-get-original-id, $id, responsive-has-parent-id($id), responsive-get-parent-id($id));
+                    @if (($responsive-get-original-id == true or $responsive-get-original-id == null) and responsive-has-parent-id($id)) {
+                        $result: responsive-get($full-key, $default, responsive-get-parent-id($id));
+                        //@debug ('#{$op} FALLBACK=>', $full-key, $result);
+                    } @else if ($default != null) {
+                        $result: $default;
+                    } @else {
+                        @warn 'Unavailable configuration path "#{$full-key}" for responsive configuraion "#{$id}"';
                     }
-                    @if ($default == null) {
-                        @warn "Unavailable configuration path '" + $full-key + "' for responsive configuraion '" + $id + "'";
-                    }
-                    $result: $default;
                 }
             }
         }
     } @else {
-        @warn "Unknown responsive configuraion id: " + $id;
+        @warn "Unknown responsive configuraion id: #{$id}";
+    }
+    $responsive-get-nesting-level: ($responsive-get-nesting-level - 1) !global;
+    @if ($responsive-get-nesting-level == 0) {
+        $responsive-get-original-id: null;
+        //@debug ('#{$op} result=>', $full-key, $default, $id, $result);
     }
     @return $result;
 }
@@ -198,27 +260,29 @@ $responsive-is-initialized: false;
 //                          list or map to define explicit layout
 // @param string $if-key    Apply media query configuration only if given key is exists in corresponding responsive configuration
 @mixin responsive-each($layout: true, $if-key: null) {
+    //@debug '---- ENTER r-each() -----';
     @each $id in responsive-get-ids() {
-        $l: null;
-        @if ($layout == true and responsive-has(layout, $id)) {
-            $l: responsive-get(layout, $id);
-        } @else if (type-of($layout) == string) {
-            @if (responsive-has($layout, $id)) {
-                $l: responsive-get($layout, $id);
-            } @else {
-                $l: $layout;
+        @if ($responsive-current-id != null) {
+            @if ($responsive-current-id == $id) {
+                @content;
             }
-        } @else if (type-of($layout) == list or type-of($layout) == map) {
-            $l: $layout;
-        }
-        @if (($if-key == null) or (responsive-has($if-key, $id))) {
-            @if ($responsive-current-id != null) {
-                @if ($responsive-current-id == $id) {
-                    @content;
+        } @else if (not index($responsive-abstract-configurations, $id)) {
+            $responsive-current-id: $id !global;
+            //@debug ('---each---', $id);
+            @if (($if-key == null) or (responsive-has($if-key))) {
+                $l: null;
+                @if ($layout == true and responsive-has(layout)) {
+                    $l: responsive-get(layout);
+                } @else if (type-of($layout) == string) {
+                    @if (responsive-has($layout)) {
+                        $l: responsive-get($layout);
+                    } @else {
+                        $l: $layout;
+                    }
+                } @else if (type-of($layout) == list or type-of($layout) == map) {
+                    $l: $layout;
                 }
-            } @else {
-                $responsive-current-id: $id !global;
-                @if (($responsive-current-id != $responsive-default-id) and (responsive-has(media-query, $id))) {
+                @if (($responsive-current-id != $responsive-default-id) and (responsive-has(media-query))) {
                     @include susy-breakpoint($id) {
                         @if ($l) {
                             @include with-layout($l) {
@@ -237,10 +301,11 @@ $responsive-is-initialized: false;
                         @content;
                     }
                 }
-                $responsive-current-id: null !global;
             }
+            $responsive-current-id: null !global;
         }
     }
+    //@debug '---- LEAVE r-each() -----';
 }
 
 // Shorthand for responsive-each()
@@ -275,38 +340,26 @@ $responsive-is-initialized: false;
             @if (length($susy) == 0) {
                 @if (responsive-has(layout) and responsive-get(layout) != null) {
                     $susy: responsive-get(layout) !global;
+                    @include global-box-sizing();
                 } @else {
                     @warn 'No default responsive layout is defined';
                 }
             }
         }
-        @include global-box-sizing();
         $responsive-is-initialized: true !global;
         //noinspection SassScssResolvedByNameOnly
-        @each $id in responsive-get-ids() {
-            @if (responsive-has(resolutions, $id)) {
-                @if ($id == $responsive-default-id) {
-                    @if (function-exists(v) and global-variable-exists(units-rem-font-size)) {
-                        $query: ();
-                        @if (responsive-has(media-query, $id)) {
-                            $query: susy-get-media(responsive-get(media-query, $id));
-                            $query: susy-parse-media($query);
-                        }
-                        @each $factor in responsive-get(resolutions, null, $id) {
-                            @if (type-of($factor) == number and current-unit(true) == rem) {
-                                $cq: map-merge($query, (min-resolution: 1dppx * $factor));
-                                @include susy-breakpoint($cq) {
-                                    html, body {
-                                        font-size: v($units-rem-font-size, px) / strip-units($factor);
-                                    }
-                                }
+        @if (function-exists(v) and global-variable-exists(units-rem-font-size) and current-unit(true) == rem) {
+            @each $id, $query in $susy-media {
+                $query: susy-parse-media($query);
+                @if (map-has-key($query, min-resolution)) {
+                    $factor: map-get($query, min-resolution);
+                    @if (type-of($factor) == number and unit($factor) == dppx) {
+                        @include susy-breakpoint($query) {
+                            html, body {
+                                font-size: v($units-rem-font-size, px) / strip-units($factor);
                             }
                         }
-                    } @else {
-                        @warn 'Responsive resolutions declaration requires "units" module to be included';
                     }
-                } @else {
-                    @warn 'Responsive resolutions should be defined in default responsive configuration';
                 }
             }
         }

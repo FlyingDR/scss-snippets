@@ -74,13 +74,10 @@ $font-default-properties: (
         @if (not index($added, font-family) and map-has-key($font-families, $item)) {
             $ik: font-family;
             $iv: join(map-get($font-families, $item), (), comma);
-        } @else if (not index($added, font-size) and $is-responsive and r-id(false) and r-has($r-fs-key, r-id())) {
+        } @else if (not index($added, font-size) and $is-responsive and $resolve and r-has($r-fs-key)) {
             $ik: font-size;
-            $iv: r-get($r-fs-key, null, r-id());
-        } @else if (not index($added, font-size) and $is-responsive and r-id(true) and r-has($r-fs-key, $responsive-default-id)) {
-            $ik: font-size;
-            $iv: r-get($r-fs-key, null, $responsive-default-id);
-        } @else if (not index($added, font-size) and $is-responsive and not $resolve and $r-size-exists) {
+            $iv: r-get($r-fs-key);
+        } @else if (not index($added, font-size) and $is-responsive and $r-size-exists) {
             $ik: font-size;
         } @else if (not index($added, font-size) and index($named-font-sizes, $item)) {
             $ik: font-size;
@@ -135,7 +132,6 @@ $font-default-properties: (
                 #{$prop}: $value !important;
             } @else {
                 #{$prop}: $value;
-
             }
         }
     }

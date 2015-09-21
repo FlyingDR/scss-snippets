@@ -97,7 +97,7 @@
              } @else if (type-of($section) == list) {
                 @include section($section);
             } @else {
-                @error 'Invalid type "' + type-of($section) + '" of section definition for responsive configuration key "' + $key + '" at "' + r-id() + '"';
+                @error 'Invalid type "#{type-of($section)}" of section definition for responsive configuration key "#{$key}" at "#{r-id()}"';
             }
         }
     }
