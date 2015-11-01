@@ -1,4 +1,3 @@
-@import "compass/typography/units";
 @import "functions";
 
 $units-current-unit: px !default;
@@ -27,7 +26,14 @@ $units-initialized: false;
             } @else if ($v == 0 or not index((px, rem), unit($v))) {
                 $v: $v;
             } @else if (unit($v) != $unit) {
-                $v: convert-length($v, $unit);
+                $from: unit($v);
+                @if ($from == px and $unit == rem) {
+                    $v: $v * 1rem / $units-rem-font-size;
+                } @else if ($from == rem and $unit == px) {
+                    $v: $v * $units-rem-font-size / 1rem;
+                } @else {
+                    @warn 'Unsupported units conversion from "#{$from}" to #{$unit}';
+                }
             }
         }
         $result: append($result, $v);
@@ -110,7 +116,6 @@ $units-initialized: false;
         } @else {
             @warn '$unit-size should be set in px';
         }
-        $base-font-size: $units-rem-font-size !global;
         @if ($units-current-unit) {
             html, body {
                 font-size: $units-rem-font-size;
