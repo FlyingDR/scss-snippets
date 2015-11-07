@@ -15,6 +15,7 @@ $font-default-properties: (
     font-weight: normal,
     font-style: normal,
 ) !default;
+$font-url-prefix: '' !default;
 
 // Get font size by name
 //
@@ -252,6 +253,16 @@ $font-default-properties: (
     $font-sizes: map-merge($font-sizes, $sizes) !global;
 }
 
+@if (not function-exists(font-url)) {
+    @function font-url($path) {
+        $url: $font-url-prefix;
+        @if (($url != '') and str_slice($url, -1) != '/') {
+            $url: $url + '/';
+        }
+        @return unquote("url('#{$url + $path}')");
+    }
+}
+
 // Render registered font faces definition
 //
 // @param map $fonts    Fonts definition to render
@@ -261,16 +272,19 @@ $font-default-properties: (
         @font-face {
             font-family: map-get($info, name);
             @if (index($formats, eot) != null) {
+                //noinspection CssInvalidFunction
                 src: font-url('#{$filename}.eot');
             }
             $sources: ();
             @if (index($formats, eot) != null) {
                 $ff: map-get($font-file-formats, eot);
+                //noinspection CssInvalidFunction
                 $sources: append($sources, font-url('#{$filename}.eot?#iefix') format('#{$ff}'));
             }
             @each $extension in $formats {
                 @if ($extension != eot) {
                     $ff: map-get($font-file-formats, $extension);
+                    //noinspection CssInvalidFunction
                     $sources: append($sources, font-url('#{$filename}.#{$extension}') format('#{$ff}'));
                 }
             }
