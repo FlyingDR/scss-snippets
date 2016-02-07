@@ -5,9 +5,11 @@ $responsive-config-parent: () !default;
 $responsive-abstract-configurations: () !default;
 $responsive-default-id: null !default;
 $responsive-current-id: null !default;
+$responsive-get-config-cache: () !default;
 $responsive-get-original-id: null !default;
 $responsive-get-nesting-level: 0 !default;
 $responsive-is-initialized: false !default;
+$responsive-test-key: '---responsive-test-key---' !default;
 
 // Register responsive configuration
 //
@@ -175,6 +177,17 @@ $responsive-is-initialized: false !default;
     }
     @if ($responsive-get-nesting-level == 0) {
         $responsive-get-original-id: $id !global;
+        @if (responsive-has-id($id)) {
+            $cid: responsive-id($id);
+            $cache-type: 'get';
+            @if ($default == $responsive-test-key) {
+                $cache-type: 'has';
+            }
+            $cache-key: '#{$cache-type}|#{$cid}|#{$key}';
+            @if (map-has-key($responsive-get-config-cache, $cache-key)) {
+                @return map-get($responsive-get-config-cache, $cache-key);
+            }
+        }
     }
     $responsive-get-nesting-level: ($responsive-get-nesting-level + 1) !global;
     $id: responsive-id($id);
@@ -218,7 +231,16 @@ $responsive-is-initialized: false !default;
     }
     $responsive-get-nesting-level: ($responsive-get-nesting-level - 1) !global;
     @if ($responsive-get-nesting-level == 0) {
-        $responsive-get-original-id: null;
+        @if (responsive-has-id($responsive-get-original-id)) {
+            $cid: responsive-id($responsive-get-original-id);
+            $cache-type: 'get';
+            @if ($default == $responsive-test-key) {
+                $cache-type: 'has';
+            }
+            $cache-key: '#{$cache-type}|#{$cid}|#{$full-key}';
+            $responsive-get-config-cache: map-merge($responsive-get-config-cache, ($cache-key: $result)) !global;
+        }
+        $responsive-get-original-id: null !global;
     }
     @return $result;
 }
@@ -234,8 +256,7 @@ $responsive-is-initialized: false !default;
 // @param string|boolean|null $id   Responsive configuration id (@see responsive-id())
 // @return boolean
 @function responsive-has($key, $id: null) {
-    $test: '___unavailable_key___';
-    @return (responsive-get($key, $test, $id) != $test);
+    @return (responsive-get($key, $responsive-test-key, $id) != $responsive-test-key);
 }
 
 // Shorthand for responsive-has()
