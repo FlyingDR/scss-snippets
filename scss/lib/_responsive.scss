@@ -173,14 +173,8 @@ $responsive-is-initialized: false !default;
             $default: null;
         }
     }
-    //$op: 'GET';
     @if ($responsive-get-nesting-level == 0) {
         $responsive-get-original-id: $id !global;
-        //@if ($default=='___unavailable_key___') {
-        //    $op: 'HAS';
-        //}
-        //$op: '#{$op}[#{$responsive-get-nesting-level}]';
-        //@debug ('#{$op} =>', $key, $default, $id, responsive-id($id));
     }
     $responsive-get-nesting-level: ($responsive-get-nesting-level + 1) !global;
     $id: responsive-id($id);
@@ -209,10 +203,8 @@ $responsive-is-initialized: false !default;
                 }
                 @if ($error) {
                     $r-cfg: null;
-                    //@debug ('#{$op} fallback=>', $responsive-get-original-id, $id, responsive-has-parent-id($id), responsive-get-parent-id($id));
                     @if (($responsive-get-original-id == true or $responsive-get-original-id == null) and responsive-has-parent-id($id)) {
                         $result: responsive-get($full-key, $default, responsive-get-parent-id($id));
-                        //@debug ('#{$op} FALLBACK=>', $full-key, $result);
                     } @else if ($default != null) {
                         $result: $default;
                     } @else {
@@ -227,7 +219,6 @@ $responsive-is-initialized: false !default;
     $responsive-get-nesting-level: ($responsive-get-nesting-level - 1) !global;
     @if ($responsive-get-nesting-level == 0) {
         $responsive-get-original-id: null;
-        //@debug ('#{$op} result=>', $full-key, $default, $id, $result);
     }
     @return $result;
 }
@@ -260,7 +251,6 @@ $responsive-is-initialized: false !default;
 //                          list or map to define explicit layout
 // @param string $if-key    Apply media query configuration only if given key is exists in corresponding responsive configuration
 @mixin responsive-each($layout: true, $if-key: null) {
-    //@debug '---- ENTER r-each() -----';
     @each $id in responsive-get-ids() {
         @if ($responsive-current-id != null) {
             @if ($responsive-current-id == $id) {
@@ -268,7 +258,6 @@ $responsive-is-initialized: false !default;
             }
         } @else if (not index($responsive-abstract-configurations, $id)) {
             $responsive-current-id: $id !global;
-            //@debug ('---each---', $id);
             @if (($if-key == null) or (responsive-has($if-key))) {
                 $l: null;
                 @if ($layout == true and responsive-has(layout)) {
@@ -305,7 +294,6 @@ $responsive-is-initialized: false !default;
             $responsive-current-id: null !global;
         }
     }
-    //@debug '---- LEAVE r-each() -----';
 }
 
 // Shorthand for responsive-each()
