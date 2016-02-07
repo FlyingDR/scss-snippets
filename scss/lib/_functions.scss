@@ -1,4 +1,5 @@
-@import "units";
+// "units" module is expected to be imported for this module
+// Not imported directly to avoid circular reference in imports that causes node-sass to break
 
 // Parse given value and determine if it contains !important modifier
 //

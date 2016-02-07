@@ -3,7 +3,7 @@
 $units-current-unit: px !default;
 $units-rem-font-size: 16px !default;
 $units-unit-size: 20px !default;
-$units-initialized: false;
+$units-initialized: false !default;
 
 // Normalize given value and convert its units if necessary
 //

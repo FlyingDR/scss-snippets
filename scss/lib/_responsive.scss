@@ -1,13 +1,13 @@
 @import "susy";
 
-$responsive-config: ();
-$responsive-config-parent: ();
-$responsive-abstract-configurations: ();
-$responsive-default-id: null;
-$responsive-current-id: null;
-$responsive-get-original-id: null;
-$responsive-get-nesting-level: 0;
-$responsive-is-initialized: false;
+$responsive-config: () !default;
+$responsive-config-parent: () !default;
+$responsive-abstract-configurations: () !default;
+$responsive-default-id: null !default;
+$responsive-current-id: null !default;
+$responsive-get-original-id: null !default;
+$responsive-get-nesting-level: 0 !default;
+$responsive-is-initialized: false !default;
 
 // Register responsive configuration
 //
