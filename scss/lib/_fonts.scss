@@ -1,4 +1,5 @@
 @import "units";
+@import "functions";
 
 $font-files: () !default;
 $font-families: () !default;
@@ -96,6 +97,12 @@ $font-url-prefix: '' !default;
             $ik: color;
         } @else if (not index($added, line-height) and (type-of($item) == number) and not ((unit($item) == em) and (abs($item) <= 0.5))) {
             $ik: line-height;
+        } @else if (not index($added, line-height) and (type-of($item) == '') and str-index('' + $item, '/') != null) {
+            $item: unquote('' + $item);
+            $a: to-number(str-slice($item, 1, str-index($item, '/') - 1));
+            $b: to-number(str-slice($item, str-index($item, '/') + 1));
+            $ik: line-height;
+            $iv: $a / $b;
         } @else if (not index($added, letter-spacing) and (type-of($item) == number and index($letter-spacing-units, unit($item)))) {
             $ik: letter-spacing;
         } @else if (not index($added, white-space) and index($whitespace, $item)) {
@@ -112,6 +119,13 @@ $font-url-prefix: '' !default;
             }
             $properties: map-merge($properties, ($ik: $iv));
             $added: append($added, $ik);
+        }
+    }
+    @if (map-has-key($properties, font-size) and map-has-key($properties, line-height)) {
+        $fs: map-get($properties, font-size);
+        $lh: map-get($properties, line-height);
+        @if ((type-of($fs) == number) and (type-of($lh) == number) and (unit($fs) == unit($lh))) {
+            $properties: map-merge($properties, (line-height: strip-units($lh / $fs)));
         }
     }
     @return $properties;
