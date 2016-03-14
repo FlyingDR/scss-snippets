@@ -1,0 +1,26 @@
+{
+  "name": "scss-snippets",
+  "version": "0.2.0",
+  "description": "Collection of helpful SCSS mixins and functions to use into various projects",
+  "main": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FlyingDR/scss-snippets.git"
+  },
+  "keywords": [
+    "scss",
+    "sass"
+  ],
+  "author": "Alexander Grimalovsky <alexander.grimalovsky@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FlyingDR/scss-snippets/issues"
+  },
+  "homepage": "https://github.com/FlyingDR/scss-snippets#readme",
+  "dependencies": {
+    "susy": "^2.2"
+  }
+}
