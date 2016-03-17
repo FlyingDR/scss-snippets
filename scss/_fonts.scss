@@ -177,10 +177,17 @@ $font-url-prefix: '' !default;
         }
     }
     @include font($font, $important, $modifications);
-    @if ($responsive) {
+    @if (length($properties) == 0) {
+        $font-size: $font;
+    }
+    @if ($responsive and ($font-size != null)) {
         $key: 'font-sizes/' + $font-size;
         @include r-each-if($key) {
             @include font($font-size);
+        }
+        $key: 'fonts/' + $font-size;
+        @include r-each-if($key) {
+            @include font(r-get($key));
         }
     }
 }
