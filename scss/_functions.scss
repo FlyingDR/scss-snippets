@@ -45,24 +45,6 @@
     @return uround((v($total) - v($size)) / 2) + v($compensation);
 }
 
-// Convert percent value into number
-//
-// @param percent $percent      Percent value to convert
-// @param boolean $fraction     true to return [0..1] range value, false to return [0..100] range value
-// @return number
-@function from-percent($percent, $fraction: true) {
-    $p: $percent;
-    $i: 0;
-    @while ($p > 0) {
-        $i: $i + 1;
-        $p: $p - 1%;
-    }
-    @if ($fraction) {
-        $i: $i / 100;
-    }
-    @return $i;
-}
-
 // Convert given unicode character code into unicode char reference
 // unicode("e655"); // "\e655"
 //
@@ -85,6 +67,19 @@
 // @return number
 @function strip-units($number) {
     @return $number / ($number * 0 + 1);
+}
+
+// Convert percent value into number
+//
+// @param percent $percent      Percent value to convert
+// @param boolean $fraction     true to return [0..1] range value, false to return [0..100] range value
+// @return number
+@function from-percent($percent, $fraction: true) {
+    $value: strip-units($percent);
+    @if ($fraction) {
+        $value: $value / 100;
+    }
+    @return $value;
 }
 
 // Add `$unit` to `$value`
@@ -140,4 +135,17 @@
     }
 
     @return if($minus, -$result, $result);
+}
+
+// Slightly lighten a color
+// Analog of tint function in InDesign
+// 
+// @access public
+// @param {Color} $color - color to tint
+// @param {Number} $percentage - percentage of `$color` in returned color
+// @return {Color}
+// @author Hugo Giraudel
+// @url https://css-tricks.com/snippets/sass/tint-shade-functions/
+@function tint($color, $percentage) {
+    @return mix(white, $color, 100% - $percentage);
 }
