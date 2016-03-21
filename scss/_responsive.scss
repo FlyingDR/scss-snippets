@@ -295,7 +295,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
                 @if (($responsive-current-id != $responsive-default-id) and (responsive-has(media-query))) {
                     @include susy-breakpoint($id) {
                         @if ($l) {
-                            @include with-layout($l) {
+                            @include with-layout($l, true) {
                                 @content;
                             }
                         } @else {
@@ -304,7 +304,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
                     }
                 } @else {
                     @if ($l) {
-                        @include with-layout($l) {
+                        @include with-layout($l, true) {
                             @content;
                         }
                     } @else {
