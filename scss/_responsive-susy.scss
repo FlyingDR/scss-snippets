@@ -1,0 +1,101 @@
+@mixin r-span($args...) {
+    @include r-each() {
+        @include span($args...);
+    }
+}
+
+@mixin r-gutters($args...) {
+    @include r-each() {
+        @include gutters($args...);
+    }
+}
+
+@mixin r-gutter($args...) {
+    @include r-each() {
+        @include gutter($args...);
+    }
+}
+
+@mixin r-container($args...) {
+    @include r-each() {
+        @include container($args...);
+    }
+}
+
+@mixin r-nested($args...) {
+    @include r-each() {
+        @include nested($args...);
+    }
+}
+
+@mixin r-pre($args...) {
+    @include r-each() {
+        @include pre($args...);
+    }
+}
+
+@mixin r-post($args...) {
+    @include r-each() {
+        @include post($args...);
+    }
+}
+
+@mixin r-pull($args...) {
+    @include r-each() {
+        @include pull($args...);
+    }
+}
+
+@mixin r-squish($args...) {
+    @include r-each() {
+        @include squish($args...);
+    }
+}
+
+@mixin r-prefix($args...) {
+    @include r-each() {
+        @include prefix($args...);
+    }
+}
+
+@mixin r-suffix($args...) {
+    @include r-each() {
+        @include suffix($args...);
+    }
+}
+
+@mixin r-pad($args...) {
+    @include r-each() {
+        @include pad($args...);
+    }
+}
+
+@mixin r-bleed($args...) {
+    @include r-each() {
+        @include bleed($args...);
+    }
+}
+
+@mixin r-bleed-x($args...) {
+    @include r-each() {
+        @include bleed-x($args...);
+    }
+}
+
+@mixin r-bleed-y($args...) {
+    @include r-each() {
+        @include bleed-y($args...);
+    }
+}
+
+@mixin r-isolate($args...) {
+    @include r-each() {
+        @include isolate($args...);
+    }
+}
+
+@mixin r-gallery($args...) {
+    @include r-each() {
+        @include gallery($args...);
+    }
+}
