@@ -1,104 +1,274 @@
-@import "susy";
-@import "units";
+// Global settings for page sections
+$section-settings: (
+    outer-selector: 'body > section', // Selector for outer element of section
+    inner-selector: 'section', // Selector for inner element of section, should be child of outer element
+    outer-padding: null, // Padding to add to outer section element to provide visual spacing between screen boundaries and site itself
+    inner-padding: null, // Padding to add to inner section element to provide visual spacing around site content 
+    options: null, // Default section options to apply globally to all sections. Either string parsable by section-parse-options() map with section options (see below) 
+) !default;
 
-%page-section {
-    @include container();
-    @include full();
-    @include break();
-    float: none;
-    padding: 0;
-    margin: 0 auto;
-    //noinspection SassScssResolvedByNameOnly
-    @if (function-exists(is-responsive) and is-responsive()) {
-        @include r-each-if(layout, layout) {
-            @include container();
-            @if (r-has(page-padding)) {
-                padding: 0 v(r-get(page-padding, 0));
-            }
+// Available section options:
+// 
+// top-offset {number|unit}     - Offset to apply at the top of section 
+// bottom-offset {number|unit}  - Offset to apply at the bottom of section. Equals to top offset if not defined
+// offset-type {margin|padding} - Explicit type of offset to use, detected automatically if not defined
+// outer-bg {color|string}      - Background or background color to set to outer section element
+// inner-bg {color|string}      - Background or background color to set to inner section element  
+// outer-css {map}              - Map of additional CSS properties to apply to outer section element 
+// inner-css {map}              - Map of additional CSS properties to apply to inner section element 
+
+/**
+ * Parse given section options
+ *
+ * @param string|map $options   Options to parse
+ * @return map
+ */
+@function section-parse-options($options) {
+    @if (type-of($options) == map) {
+        // Treat map argument as "already parsed options"
+        @return $options;
+    } @else if ($options == null) {
+        @return ();
+    }
+    $properties: ();
+    $added: ();
+    @each $item in $options {
+        $ik: null;
+        $iv: $item;
+        @if (not index($added, top-offset) and (type-of($item) == number)) {
+            $ik: top-offset;
+        } @else if (not index($added, bottom-offset) and (type-of($item) == number)) {
+            $ik: bottom-offset;
+        } @else if (not index($added, inner-bg) and (type-of($item) == color)) {
+            $ik: inner-bg;
+        } @else if (not index($added, inner-bg) and (type-of($item) == string)) {
+            $ik: inner-bg;
+        } @else if (not index($added, outer-bg) and (type-of($item) == color)) {
+            $ik: outer-bg;
+        } @else if (not index($added, outer-bg) and (type-of($item) == string)) {
+            $ik: outer-bg;
+        } @else if (not index($added, offset-type) and index(padding margin, $item)) {
+            $ik: offset-type;
+        }
+        @if ($ik != null) {
+            $properties: map-merge($properties, ($ik: $iv));
+            $added: append($added, $ik);
         }
     }
+    @return $properties;
 }
 
-// Declare vertical margins and background for page section
-//
-// @param int|string|list $top  Either top margin or list with one or more parameters for mixin
-// @param int|string $bottom    Bottom margin
-// @param mixed $bg             Background for section
-@mixin section($top: null, $bottom: null, $bg: null) {
-    @if (type-of($top) == list) {
-        $map: $top;
-        $l-bottom: $bottom;
-        $l-bg: $bg;
-        @if (length($map) == 1) {
-            $top: nth($map, 1);
-            $bottom: $l-bottom;
-            $bg: $l-bg;
-        } @else if (length($map) == 2) {
-            $top: nth($map, 1);
-            $bottom: nth($map, 2);
-            @if ($l-bottom != null) {
-                $bg: $l-bottom;
-            } @else {
-                $bg: $l-bg;
-            }
-        } @else if (length($map) == 3) {
-            $top: nth($map, 1);
-            $bottom: nth($map, 2);
-            $bg: nth($map, 3);
-        } @else {
-            @error "section() argument should contain 1..3 items if passed as list of values";
-        }
+/**
+ * Normalize and get global section settings
+ *
+ * @param map $settings     Modifications to apply to default global section settings
+ * @return map
+ * @internal
+ */
+@function _section-settings($settings: null) {
+    @if (type-of($section-settings) != map) {
+        @error 'Global section settings should be defined as a map';
     }
-    $prop: margin;
-    @if ($bg != null) {
-        $prop: padding;
+    @if ($settings == null) {
+        @return $section-settings;
     }
-    @if ($top != null) {
-        #{$prop}-top: v($top);
+    @if ((type-of($settings) != map) and ($settings != ())) {
+        @error 'Section settings should be defined as a map';
     }
-    @if ($bottom != null) {
-        #{$prop}-bottom: v($bottom);
+    @return map-merge($section-settings, $settings);
+}
+
+/**
+ * Apply background options for section 
+ * 
+ * @param map $options      Section options set
+ * @param string $prefix    Prefix for option name to use
+ * @internal
+ */
+@mixin _section-bg($options, $prefix) {
+    $bg: null;
+    @if (map-has-key($options, #{$prefix}-bg)) {
+        $bg: map-get($options, #{$prefix}-bg);
     }
-    @if ($bg != null) {
+    @if (type-of($bg) == color) {
+        background-color: $bg;
+    } @else if (type-of($bg) == string) {
         background: $bg;
     }
 }
 
-// Section information declaration with responsive modifications
-//
-// @param string $key           Responsive configuration key to get information from
-// @param int|string|list $top  Either top margin or list with one or more parameters for mixin
-// @param int|string $bottom    Bottom margin
-// @param mixed $bg             Background for section
-@mixin r-section($key, $top: null, $bottom: null, $bg: null) {
-    @include section($top, $bottom, $bg);
-    //noinspection SassScssResolvedByNameOnly
+/**
+ * Apply additional CSS properties for section 
+ * 
+ * @param map $options      Section options set
+ * @param string $prefix    Prefix for option name to use
+ * @internal
+ */
+@mixin _section-css($options, $prefix) {
+    @if (map-has-key($options, #{$prefix}-css)) {
+        @each $prop, $value in map-get($options, #{$prefix}-css) {
+            #{$prop}: v($value);
+        }
+    }
+}
+
+/**
+ * Apply additional horizontal padding for section 
+ * 
+ * @param number|null $outer    Padding for outer section element
+ * @param number|null $inner    Padding for inner section element
+ * @internal
+ */
+@mixin _section-padding($outer: null, $inner: null) {
+    $op: 0;
+    $ip: 0;
+    @if ($outer != null) {
+        $op: v($outer);
+    }
+    @if ($inner != null) {
+        $ip: v($inner);
+    }
+    $container: v(container());
+    @if (unit($container) != '%') {
+        @if ($outer != null or $inner != null) {
+            min-width: $container + $op * 2 + $ip * 2;
+        } @else {
+            min-width: 0;
+        }
+    } @else {
+        min-width: 0;
+    }
+    @if ($outer != null) {
+        padding-left: $op;
+        padding-right: $op;
+    }
+    > #{map-get(_section-settings(), inner-selector)} {
+        @if ($inner != null) {
+            @if (unit($container) != '%') {
+                width: auto;
+                max-width: $container + $ip * 2;
+            } @else {
+                max-width: 100%;
+            }
+            padding-left: $ip;
+            padding-right: $ip;
+        } @else {
+            max-width: none;
+        }
+    }
+}
+
+/**
+ * Render section with given options 
+ *
+ * @param string|list|map|null $options     Section options that can be recognized by section-parse-options() 
+ */
+@mixin section($options: null) {
+    $options: section-parse-options($options);
+
+    @include _section-bg($options, outer);
+    @include _section-css($options, outer);
+    > #{map-get(_section-settings(), inner-selector)} {
+        // Vertical offsets
+        $top: null;
+        $bottom: null;
+        $offset-type: margin;
+        @if (map-has-key($options, inner-bg)) {
+            $offset-type: padding;
+        }
+        @if (map-has-key($options, offset-type)) {
+            $offset-type: map-get($options, offset-type);
+        }
+        @if (map-has-key($options, top-offset)) {
+            $top: map-get($options, top-offset);
+        }
+        @if (map-has-key($options, bottom-offset)) {
+            $bottom: map-get($options, bottom-offset);
+        }
+        @if ($top != null and $bottom == null) {
+            $bottom: $top;
+        }
+        @if ($top != null) {
+            #{$offset-type}-top: v($top);
+        }
+        @if ($bottom != null) {
+            #{$offset-type}-bottom: v($bottom);
+        }
+        @include _section-bg($options, inner);
+        @include _section-css($options, inner);
+    }
+}
+
+/**
+ * Render section with options taken from responsive configuration
+ *
+ * @param string $key                       Responsive configuration key to take section options from
+ * @param string|list|map|null $options     Section options that can be recognized by section-parse-options() 
+ */
+@mixin r-section($key, $options: null) {
+    @include section($options);
     @if (function-exists(is-responsive) and is-responsive()) {
         @include r-each-if($key) {
-            $section: r-get($key);
-            @if (type-of($section) == map) {
-                @each $prop, $value in $section {
-                    @if ($prop == section) {
-                        @include section($value);
-                    } @else if ($prop == layout) {
-                        @include span($value);
-                    } @else if (index(margin padding, $prop)) {
-                        #{$prop}: v($value);
-                    } @else if ($prop == css) {
-                        @if (type-of($value) == map) {
-                            @each $cp, $cv in $value {
-                                #{$cp}: v($cv);
-                            }
-                        } @else {
-                            @error 'Additional CSS properties for r-section() should be defined as map';
-                        }
-                    }
-                }
-             } @else if (type-of($section) == list) {
-                @include section($section);
+            $options: r-get($key);
+            @if (type-of($options) == map or type-of($options) == list) {
+                @include section($options);
             } @else {
-                @error 'Invalid type "#{type-of($section)}" of section definition for responsive configuration key "#{$key}" at "#{r-id()}"';
+                @error 'Invalid type "#{type-of($options)}" of section definition for responsive configuration key "#{$key}" at "#{r-id()}"';
             }
+        }
+    }
+}
+
+/**
+ * Initialize section module
+ *
+ * @param string|list|map|null $options     Default section options to use 
+ * @param map|null $settings                Modification to apply to global section settings 
+ */
+@mixin section-init($options: null, $settings: null) {
+    $settings: _section-settings($settings);
+    $section-settings: $settings !global;
+    $options: map-merge(section-parse-options(map-get($settings, options)), section-parse-options($options));
+    #{map-get($settings, outer-selector)} {
+        > #{map-get($settings, inner-selector)} {
+            @include break();
+        }
+        @include section($options);
+        @if (function-exists(is-responsive) and is-responsive()) {
+            @include r-each() {
+                $opt: null;
+                @if (r-has(section)) {
+                    $opt: section-parse-options(r-get(section));
+                }
+                > #{map-get($settings, inner-selector)} {
+                    @include container();
+                }
+                @include section($opt);
+                @include _section-padding(susy-get(outer-padding), susy-get(inner-padding));
+            }
+        } @else {
+            > #{map-get($settings, inner-selector)} {
+                @include container();
+            }
+            $outer: null;
+            $inner: null;
+            @if (function-exists(susy-get)) {
+                $outer: susy-get(outer-padding);
+                $inner: susy-get(inner-padding);
+            }
+            @if (map-has-key($settings, outer-padding)) {
+                $v: map-get($settings, outer-padding);
+                @if ($v != null) {
+                    $outer: $v;
+                }
+            }
+            @if (map-has-key($settings, inner-padding)) {
+                $v: map-get($settings, inner-padding);
+                @if ($v != null) {
+                    $inner: $v;
+                }
+            }
+            @include _section-padding($outer, $inner);
         }
     }
 }
