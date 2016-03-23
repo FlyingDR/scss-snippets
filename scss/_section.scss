@@ -129,7 +129,8 @@ $section-settings: (
         $ip: v($inner);
     }
     $container: v(container());
-    @if (unit($container) != '%') {
+    $static-container: unit($container) != '%';
+    @if ($static-container) {
         @if ($outer != null or $inner != null) {
             min-width: $container + $op * 2 + $ip * 2;
         } @else {
@@ -143,8 +144,11 @@ $section-settings: (
         padding-right: $op;
     }
     > #{map-get(_section-settings(), inner-selector)} {
+        @if (not $static-container) {
+            width: auto;
+        }
         @if ($inner != null) {
-            @if (unit($container) != '%') {
+            @if ($static-container) {
                 width: auto;
                 max-width: $container + $ip * 2;
             } @else {
