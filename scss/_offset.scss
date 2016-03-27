@@ -1,0 +1,112 @@
+/**
+ * Generate offsets based on provided information
+ *
+ * Offset can be defined as list of properties, it can include:
+ * - offset values (either explicit or defined in units)
+ * - offset layout definition (either complete layout name or its shorthand)
+ * - "auto" to enable auto offset 
+ * - importance modifier override ("!", "important", "!important")
+ * - offset type override ("margin" or "padding")
+ *
+ * @param list|number $offset   Either numeric offset value or list of offset information to parse
+ * @param string $layout        Offset layout to use
+ * @param boolean $auto         TRUE to add "auto" offsets for vertical/horizontal offset layouts
+ * @param boolean $important    TRUE to add !important modifier for generated offsets
+ * @param string $property      Offset property to use
+ */
+@mixin offset($offset, $layout: null, $auto: false, $important: false, $property: margin) {
+    $offset-layouts: (
+        t: top,
+        b: bottom,
+        l: left, 
+        r: right,
+        v: vertical,
+        h: horizontal,
+    );
+    @if (map-has-key($offset-layouts, $layout)) {
+        $layout: map-get($offset-layouts, $layout);
+    }
+    @if (type-of($offset) == list) {
+        $value: ();
+        @each $v in $offset {
+            @if ($v == margin or $v == padding) {
+                $type: $v;
+            } @else if ($v == '!' or $v == important or $v == '!important') {
+                $important: true;
+            } @else if ($v == auto) {
+                $auto: true;
+            } @else if (map-has-key($offset-layouts, $v)) {
+                $layout: map-get($offset-layouts, $v);
+            } @else {
+                $value: append($value, v($v));
+            }
+        }
+        $offset: $value;
+    } @else if (type-of($offset) == number) {
+        $offset: v($offset);
+    } @else {
+        @error 'offset() accepts only list or number as argument, #{type-of($offset)} given';
+    }
+    
+    @if ($important) {
+        $important: ' !important';
+    } @else {
+        $important: '';
+    }
+
+    @if (index((top, bottom, left, right), $layout) and length($offset) >= 1) {
+        #{$property}-#{$layout}: nth($offset, 1)#{$important};
+    } @else if (index((vertical, horizontal), $layout) and length($offset) >= 1) {
+        $first: nth($offset, 1);
+        $second: null;
+        @if (length($offset) >= 2) {
+            $second: nth($offset, 2);
+        }
+        @if ($auto) {
+            @if ($layout == vertical) {
+                @if ($second != null) {
+                    #{$property}: $first auto $second#{$important};
+                } @else {
+                    #{$property}: $first auto#{$important};
+                }
+            } @else {
+                @if ($second != null) {
+                    #{$property}: auto $first auto $second#{$important};
+                } @else {
+                    #{$property}: auto $first#{$important};
+                }
+            }
+        } @else {
+            @if ($layout == vertical) {
+                #{$property}-top: $first #{$important};
+                @if ($second != null) {
+                    #{$property}-bottom: $second#{$important};
+                }
+            } @else {
+                #{$property}-right: $first #{$important};
+                @if ($second != null) {
+                    #{$property}-left: $second#{$important};
+                }
+            }
+        }
+    } @else {
+        #{$property}: $offset#{$important};
+    }
+}
+
+/**
+ * Generate element offsets based on information from responsive configuration
+ *
+ * @param string $key           Key into responsive configuration to use
+ * @param string $layout        Offset layout to use
+ * @param boolean $auto         TRUE to add "auto" offsets for vertical/horizontal offset layouts
+ * @param boolean $important    TRUE to add !important modifier for generated offsets
+ * @param string $property      Offset property to use
+ */
+@mixin r-offset($key, $layout: null, $auto: false, $important: false, $property: margin) {
+    @if (function-exists(is-responsive) and is-responsive()) {
+        @include r-each-if($key) {
+            @include offset(r-get($key), $layout, $auto, $important, $property);
+        }
+    }
+}
