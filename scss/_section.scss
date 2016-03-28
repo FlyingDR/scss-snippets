@@ -146,8 +146,6 @@ $section-settings: (
             }
             padding-left: $ip;
             padding-right: $ip;
-        } @else {
-            max-width: none;
         }
     }
 }
