@@ -213,12 +213,7 @@ $section-settings: (
     @include section($options);
     @if (function-exists(is-responsive) and is-responsive()) {
         @include r-each-if($key) {
-            $options: r-get($key);
-            @if (type-of($options) == map or type-of($options) == list) {
-                @include section($options);
-            } @else {
-                @error 'Invalid type "#{type-of($options)}" of section definition for responsive configuration key "#{$key}" at "#{r-id()}"';
-            }
+            @include section(r-get($key));
         }
     }
 }
