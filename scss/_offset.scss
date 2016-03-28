@@ -1,19 +1,17 @@
-/**
- * Generate offsets based on provided information
- *
- * Offset can be defined as list of properties, it can include:
- * - offset values (either explicit or defined in units)
- * - offset layout definition (either complete layout name or its shorthand)
- * - "auto" to enable auto offset 
- * - importance modifier override ("!", "important", "!important")
- * - offset type override ("margin" or "padding")
- *
- * @param list|number $offset   Either numeric offset value or list of offset information to parse
- * @param string $layout        Offset layout to use
- * @param boolean $auto         TRUE to add "auto" offsets for vertical/horizontal offset layouts
- * @param boolean $important    TRUE to add !important modifier for generated offsets
- * @param string $property      Offset property to use
- */
+// Generate offsets based on provided information
+// 
+// Offset can be defined as list of properties, it can include:
+// - offset values (either explicit or defined in units)
+// - offset layout definition (either complete layout name or its shorthand)
+// - "auto" to enable auto offset 
+// - importance modifier override ("!", "important", "!important")
+// - offset type override ("margin" or "padding")
+// 
+// @param list|number $offset   Either numeric offset value or list of offset information to parse
+// @param string $layout        Offset layout to use
+// @param boolean $auto         TRUE to add "auto" offsets for vertical/horizontal offset layouts
+// @param boolean $important    TRUE to add !important modifier for generated offsets
+// @param string $property      Offset property to use
 @mixin offset($offset, $layout: null, $auto: false, $important: false, $property: margin) {
     $offset-layouts: (
         t: top,
@@ -94,15 +92,13 @@
     }
 }
 
-/**
- * Generate element offsets based on information from responsive configuration
- *
- * @param string $key           Key into responsive configuration to use
- * @param string $layout        Offset layout to use
- * @param boolean $auto         TRUE to add "auto" offsets for vertical/horizontal offset layouts
- * @param boolean $important    TRUE to add !important modifier for generated offsets
- * @param string $property      Offset property to use
- */
+// Generate element offsets based on information from responsive configuration
+// 
+// @param string $key           Key into responsive configuration to use
+// @param string $layout        Offset layout to use
+// @param boolean $auto         TRUE to add "auto" offsets for vertical/horizontal offset layouts
+// @param boolean $important    TRUE to add !important modifier for generated offsets
+// @param string $property      Offset property to use
 @mixin r-offset($key, $layout: null, $auto: false, $important: false, $property: margin) {
     @if (function-exists(is-responsive) and is-responsive()) {
         @include r-each-if($key) {

@@ -17,12 +17,10 @@ $section-settings: (
 // outer-css {map}              - Map of additional CSS properties to apply to outer section element 
 // inner-css {map}              - Map of additional CSS properties to apply to inner section element 
 
-/**
- * Parse given section options
- *
- * @param string|map $options   Options to parse
- * @return map
- */
+// Parse given section options
+//
+// @param string|map $options   Options to parse
+// @return map
 @function section-parse-options($options) {
     @if (type-of($options) == map) {
         // Treat map argument as "already parsed options"
@@ -58,13 +56,11 @@ $section-settings: (
     @return $properties;
 }
 
-/**
- * Normalize and get global section settings
- *
- * @param map $settings     Modifications to apply to default global section settings
- * @return map
- * @internal
- */
+// Normalize and get global section settings
+//
+// @param map $settings     Modifications to apply to default global section settings
+// @return map
+// @internal
 @function _section-settings($settings: null) {
     @if (type-of($section-settings) != map) {
         @error 'Global section settings should be defined as a map';
@@ -78,13 +74,11 @@ $section-settings: (
     @return map-merge($section-settings, $settings);
 }
 
-/**
- * Apply background options for section 
- * 
- * @param map $options      Section options set
- * @param string $prefix    Prefix for option name to use
- * @internal
- */
+// Apply background options for section 
+//
+// @param map $options      Section options set
+// @param string $prefix    Prefix for option name to use
+// @internal
 @mixin _section-bg($options, $prefix) {
     $bg: null;
     @if (map-has-key($options, #{$prefix}-bg)) {
@@ -97,13 +91,11 @@ $section-settings: (
     }
 }
 
-/**
- * Apply additional CSS properties for section 
- * 
- * @param map $options      Section options set
- * @param string $prefix    Prefix for option name to use
- * @internal
- */
+// Apply additional CSS properties for section 
+//
+// @param map $options      Section options set
+// @param string $prefix    Prefix for option name to use
+// @internal
 @mixin _section-css($options, $prefix) {
     @if (map-has-key($options, #{$prefix}-css)) {
         @each $prop, $value in map-get($options, #{$prefix}-css) {
@@ -112,13 +104,11 @@ $section-settings: (
     }
 }
 
-/**
- * Apply additional horizontal padding for section 
- * 
- * @param number|null $outer    Padding for outer section element
- * @param number|null $inner    Padding for inner section element
- * @internal
- */
+// Apply additional horizontal padding for section 
+//
+// @param number|null $outer    Padding for outer section element
+// @param number|null $inner    Padding for inner section element
+// @internal
 @mixin _section-padding($outer: null, $inner: null) {
     $op: 0;
     $ip: 0;
@@ -162,11 +152,9 @@ $section-settings: (
     }
 }
 
-/**
- * Render section with given options 
- *
- * @param string|list|map|null $options     Section options that can be recognized by section-parse-options() 
- */
+// Render section with given options 
+//
+// @param string|list|map|null $options     Section options that can be recognized by section-parse-options() 
 @mixin section($options: null) {
     $options: section-parse-options($options);
 
@@ -203,12 +191,10 @@ $section-settings: (
     }
 }
 
-/**
- * Render section with options taken from responsive configuration
- *
- * @param string $key                       Responsive configuration key to take section options from
- * @param string|list|map|null $options     Section options that can be recognized by section-parse-options() 
- */
+// Render section with options taken from responsive configuration
+//
+// @param string $key                       Responsive configuration key to take section options from
+// @param string|list|map|null $options     Section options that can be recognized by section-parse-options() 
 @mixin r-section($key, $options: null) {
     @include section($options);
     @if (function-exists(is-responsive) and is-responsive()) {
@@ -218,12 +204,10 @@ $section-settings: (
     }
 }
 
-/**
- * Initialize section module
- *
- * @param string|list|map|null $options     Default section options to use 
- * @param map|null $settings                Modification to apply to global section settings 
- */
+// Initialize section module
+//
+// @param string|list|map|null $options     Default section options to use 
+// @param map|null $settings                Modification to apply to global section settings 
 @mixin section-init($options: null, $settings: null) {
     $settings: _section-settings($settings);
     $section-settings: $settings !global;
