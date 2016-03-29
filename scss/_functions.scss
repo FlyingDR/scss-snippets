@@ -11,7 +11,7 @@
             $nv: append($nv, nth($value, $i));
         }
         $value: $nv;
-    } @else if (type-of($value) == string and str-slice($value, -11) == ' !important') {
+    } @else if (type-of($value) == string and length($value) >= 11 and str-slice($value, -11) == ' !important') {
         $important: true;
         $value: str-slice($value, 0, -11);
         @while str-slice($value, -1) == ' ' {
