@@ -75,16 +75,15 @@
                 }
             }
         } @else {
+            @if ($second == null) {
+                $second: $first;
+            }
             @if ($layout == vertical) {
-                #{$property}-top: $first #{$important};
-                @if ($second != null) {
-                    #{$property}-bottom: $second#{$important};
-                }
+                #{$property}-top: $first#{$important};
+                #{$property}-bottom: $second#{$important};
             } @else {
-                #{$property}-right: $first #{$important};
-                @if ($second != null) {
-                    #{$property}-left: $second#{$important};
-                }
+                #{$property}-left: $second#{$important};
+                #{$property}-right: $first#{$important};
             }
         }
     } @else {
