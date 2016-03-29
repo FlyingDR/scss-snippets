@@ -153,9 +153,12 @@ $font-url-prefix: '' !default;
 // Works exactly like usual font(), but adds media queries for font-size property
 // if there is responsive configuration for used named font size
 //
-// @param list|map $font      Either list of font values list to parse or already parsed list of font properties
-// @param list $important     List of font properties that should be marked as important
-// @param map $modifications  Map of font properties modifications to apply to given font values
+// @param string|list|map $font     One of:
+//                                  - Responsive configuration key to take font information from 
+//                                  - List of font values to parse with responsive font size or responsive font definition  
+//                                  - Already parsed list of font properties
+// @param list $important           List of font properties that should be marked as important
+// @param map $modifications        Map of font properties modifications to apply to given font values
 //noinspection SassScssResolvedByNameOnly
 @mixin r-font($font, $important: '', $modifications: null) {
     $responsive: (function-exists(is-responsive) and is-responsive());
@@ -178,13 +181,19 @@ $font-url-prefix: '' !default;
         $font-size: $font;
     }
     @if ($responsive and ($font-size != null)) {
-        $key: 'font-sizes/' + $font-size;
-        @include r-each-if($key) {
-            @include font($font-size);
-        }
-        $key: 'fonts/' + $font-size;
-        @include r-each-if($key) {
-            @include font(r-get($key));
+        @if (str-index($font-size, '/') != null) {
+            @include r-each-if($font-size, false) {
+                @include font(r-get($font-size), $important, $modifications);
+            }
+        } @else {
+            $key: 'font-sizes/' + $font-size;
+            @include r-each-if($key, false) {
+                @include font($font-size, $important, $modifications);
+            }
+            $key: 'fonts/' + $font-size;
+            @include r-each-if($key, false) {
+                @include font(r-get($key), $important, $modifications);
+            }
         }
     }
 }
