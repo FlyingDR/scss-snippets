@@ -1,5 +1,9 @@
 $responsive-config: () !default;
 $responsive-config-parent: () !default;
+$responsive-config-handlers: (
+    responsive-handle-layout,
+    responsive-handle-media-query,
+) !default;
 $responsive-abstract-configurations: () !default;
 $responsive-default-id: null !default;
 $responsive-current-id: null !default;
@@ -8,6 +12,29 @@ $responsive-get-original-id: null !default;
 $responsive-get-nesting-level: 0 !default;
 $responsive-is-initialized: false !default;
 $responsive-test-key: '---responsive-test-key---' !default;
+
+// Add responsive configuration handler
+// 
+// @param string $handler   Handler function name. It should accept (map $config, string $id) arguments and return responsive configuration map
+@mixin responsive-add-handler($handler) {
+    @if (not function-exists($handler)) {
+        @error 'Unavailable responsive configuration handler: #{$handler}';
+    }
+    $responsive-config-handlers: append($responsive-config-handlers, $handler) !global;
+}
+
+// Remove responsive configuration handler
+// 
+// @param string $handler   Handler function name to remove
+@mixin responsive-remove-handler($handler) {
+    $handlers: ();
+    @each $h in $responsive-config-handlers {
+        @if ($h != $handler) {
+            $handlers: append($handlers, $h);
+        }
+    }
+    $responsive-config-handlers: $handlers !global;
+}
 
 // Register responsive configuration
 //
@@ -38,7 +65,18 @@ $responsive-test-key: '---responsive-test-key---' !default;
             @error 'Unknown parent responsive configuration id "#{$parent}" is given for responsive configuration "#{$id}"';
         }
     }
+    // Current configuration is stored into responsive configurations storage to let handlers to process it using r-has/r-get
     $responsive-config: map-merge($responsive-config, ($id: $config)) !global;
+    @each $handler in $responsive-config-handlers {
+        $c: call($handler, $config, $id);
+        $responsive-get-config-cache: () !global;
+        @if (type-of($c) == map) {
+            $config: $c;
+            $responsive-config: map-merge($responsive-config, ($id: $config)) !global;
+        } @else {
+            @warn 'Responsive configuration handler #{$handler} doesn\'t return configuration map as it should';
+        }
+    }
     @if ($abstract) {
         $responsive-abstract-configurations: append($responsive-abstract-configurations, $id) !global;
     }
@@ -380,9 +418,147 @@ $responsive-test-key: '---responsive-test-key---' !default;
             }
         }
     }
+    $responsive-get-config-cache: () !global;
 }
 
 // Determine if responsive module can be used
 @function is-responsive() {
     @return (length($responsive-config) > 0 and $responsive-is-initialized);
+}
+
+// Responsive configuration handler to simplify definition of Susy layouts
+@function responsive-handle-layout($config, $id) {
+    @if (not r-has(layout, $id)) {
+        @return $config;
+    }
+    $layout: r-get(layout, null, $id);
+    @if (type-of($layout) != map) {
+        $layout: parse-grid($layout);
+    }
+    $have-math: map-has-key($layout, math);
+    $have-container: map-has-key($layout, container);
+    $have-columns: map-has-key($layout, columns);
+    $have-gutters: map-has-key($layout, gutters);
+    $have-column-width: map-has-key($layout, column-width);
+    $static-math: ($have-math and map-get($layout, math) == static) or false;
+    
+    // Normalize numeric values
+    @each $property in (container, column-width, outer-padding, inner-padding) {
+        @if (map-has-key($layout, $property)) {
+            $layout: map-merge($layout, ($property: v(map-get($layout, $property))));
+        }
+    }
+
+    // Convert explicit gutters size into fraction value required by Susy
+    @if ($have-gutters) {
+        $gutters: map-get($layout, gutters);
+        @if (type-of($gutters) == number) {
+            @if (unitless($gutters)) {
+                @if ($static-math and ($gutters >= 1)) {
+                    @warn 'Possible misconfiguration: gutter size for "#{$id}" responsive configuration is more then 1 which may be a sign that it is defined in units. '+
+                    'To avoid confusion consider either use u() explicitly or define gutter size in #{current-unit(true)}';
+                }
+            } @else {
+                @if ($have-column-width) {
+                    $gutters: v($gutters) / v(map-get($layout, column-width));
+                }
+            }
+            $layout: map-merge($layout, (gutters: $gutters));
+        } @else {
+            @warn 'Gutter size should be defined as number into "#{$id}" responsive configuration';
+        }
+    }
+
+    // Determine gutters size by container and column size
+    @if ($have-container and $have-columns and $have-column-width and $static-math and not $have-gutters) {
+        $container: v(map-get($layout, container));
+        $columns: map-get($layout, columns);
+        $gutters: ($container - v($columns * map-get($layout, column-width))) / ($columns - 1);
+        $gutters: v($gutters / map-get($layout, column-width));
+        $layout: map-merge($layout, (gutters: $gutters));
+    }
+
+    // Determine complete section width for media breakpoint
+    @if ($static-math) {
+        $media-query-container: container($layout);
+        @if (map-has-key($layout, outer-padding)) {
+            $media-query-container: $media-query-container + v(map-get($layout, outer-padding)) * 2;
+        }
+        @if (map-has-key($layout, inner-padding)) {
+            $media-query-container: $media-query-container + v(map-get($layout, inner-padding)) * 2;
+        }
+        $config: map-merge($config, (media-query-container: $media-query-container));
+    }
+    $config: map-merge($config, (layout: $layout));
+    @return $config;
+}
+
+// Responsive configuration handler to simplify definition media queries
+@function responsive-handle-media-query($config, $id) {
+    @if (not r-has(media-query, $id)) {
+        @return $config;
+    }
+    $config-ids: responsive-get-ids();
+    $containers: ();
+    @each $rid in $config-ids {
+        @if (r-has(media-query-container, $rid)) {
+            $containers: map-merge($containers, ($rid: r-get(media-query-container, null, $rid)));
+        }
+    }
+    $query: r-get(media-query, null, $id);
+    @if (type-of($query) == map) {
+        @each $key, $value in $query {
+            @if (index($config-ids, $value)) {
+                @if (map-has-key($containers, $value)) {
+                    $value: v(map-get($containers, $value));
+                    @if ($key == max-width) {
+                        $value: $value - v(1px);
+                    }
+                    $query: map-merge($query, ($key: $value));
+                } @else {
+                    @warn 'Responsive configuration identifier "#{$value}" is used for media query parameter "#{$key}" into responsive configuration "#{$id}", ' + 
+                    'but it can\'t be used as media query breakpoint because target responsive configuration have no fixed container size. ' + 
+                    'You can set "media-query-container" key at "#{$value}" to let it to be used as media query breakpoint';
+                }
+            } @else if (type-of($value) == number and unitless($value)) {
+                $query: map-merge($query, ($key: v($value)));
+            }
+        }
+    } @else if (type-of($query) == list) {
+        $index: 1;
+        @each $value in $query {
+            @if (index($config-ids, $value)) {
+                @if (map-has-key($containers, $value)) {
+                    $value: v(map-get($containers, $value));
+                    @if ($index == length($query)) {
+                        $value: $value - v(1px);
+                    }
+                    $query: set-nth($query, $index, $value);
+                } @else {
+                    @warn 'Responsive configuration identifier "#{$value}" is used as media query breakpoint into responsive configuration "#{$id}", ' + 
+                    'but it can\'t be used here because target responsive configuration have no fixed container size. ' + 
+                    'You can set "media-query-container" key at "#{$value}" to let it to be used as media query breakpoint';
+                }
+            } @else if (type-of($value) == number and unitless($value)) {
+                $query: set-nth($query, $index, v($value));
+            }
+            $index: $index + 1;
+        }
+    } @else if (type-of($query) == string) {
+        @if (index($config-ids, $query)) {
+            @if (map-has-key($containers, $query)) {
+                $query: v(map-get($containers, $query));
+            } @else {
+                @warn 'Responsive configuration identifier "#{$query}" is used as media query breakpoint into responsive configuration "#{$id}", ' + 
+                    'but it can\'t be used here because target responsive configuration have no fixed container size. ' + 
+                    'You can set "media-query-container" key at "#{$query}" to let it to be used as media query breakpoint';
+            }
+        } @else if (type-of($query) == number and unitless($query)) {
+            $query: v($query);
+        }
+    }
+
+    $query: susy-parse-media($query);
+    $config: map-merge($config, (media-query: $query));
+    @return $config;
 }
