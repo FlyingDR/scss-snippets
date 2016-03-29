@@ -330,8 +330,17 @@ $responsive-test-key: '---responsive-test-key---' !default;
 }
 
 // Initialize $susy and $susy-media based on information from responsive configuration
-@mixin responsive-init() {
+@mixin responsive-init($default-id: null) {
     @if (not $responsive-is-initialized) {
+        @if ($default-id != null) {
+            @if ($responsive-default-id != null) {
+                @error 'Default responsive configuration is already chosen for "#{$responsive-default-id}", selected again during initialization';
+            } @else if (index($responsive-abstract-configurations, $default-id)) {
+                @error 'Given default responsive configuration "#{$default-id}" is abstract';
+            } @else {
+                $responsive-default-id: $default-id !global;
+            }
+        }
         @if (length(responsive-get-ids()) > 0) {
             @if ($responsive-default-id == null) {
                 @warn 'Default responsive configuration is not defined';
