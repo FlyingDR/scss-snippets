@@ -15,26 +15,6 @@ $font-default-properties: (
 ) !default;
 $font-url-prefix: '' !default;
 
-// Get font size by name
-//
-// @param string $size  Registered font size name
-@function font-size($size) {
-    $sizes: px, em;
-    @if ((type-of($size) == number) and index($sizes, unit($size))) {
-        @return v($size);
-    } @else if (not map-has-key($font-sizes, $size)) {
-        @warn 'Unkown font size: ' + $size;
-    }
-    @return v(map-get($font-sizes, $size));
-}
-
-// Set font-size CSS property with given font size name
-//
-// @param string $size  Registered font size name
-@mixin font-size($size) {
-    font-size: font-size($size);
-}
-
 // Parse given font string into set of CSS properties and their values
 //
 // @param list $font        Font values list to parse
