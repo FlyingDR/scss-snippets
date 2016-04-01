@@ -14,90 +14,194 @@ $font-default-properties: (
     font-style: normal,
 ) !default;
 $font-url-prefix: '' !default;
+$font-handlers: (
+    parse: (
+        font-property-parser-font-family,
+        font-property-parser-font-size,
+        font-property-parser-font-weight,
+        font-property-parser-font-style,
+        font-property-parser-color,
+        font-property-parser-line-height,
+        font-property-parser-line-height,
+        font-property-parser-letter-spacing,
+        font-property-parser-white-space,
+        font-property-parser-text-transform,
+    ),
+    normalize: (
+        font-property-normalizer-line-height,
+        font-property-normalizer-important,
+    ),
+) !default;
 
-// Parse given font string into set of CSS properties and their values
-//
-// @param list $font        Font values list to parse
-// @param boolean $resolve  true to resolve values of parsed font properties, false to just resolve property names but leave values as is
-// @return map
-// noinspection SassScssResolvedByNameOnly
-@function parse-font($font, $resolve: true) {
-    @if (type-of($font) == map) {
-        // Treat map argument as "already parsed font properties"
-        @return $font;
+// Add custom handler for font properties. Various types of handlers are accepted, determined by $type argument:
+// - parse          Handler should accept (mixed $value, map $properties, map $options) arguments 
+//                  and return null if no result is available or ($property: $value) map of properties
+// - normalize      Handler should accept (map $properties, map $options) and return new font properties map
+// 
+// @param string $handler   Handler function name
+// @param string $type      Handler type (parse, normalize)
+@mixin font-add-handler($handler, $type: parse) {
+    @if (not function-exists($handler)) {
+        @error 'Unavailable font properties handler: #{$handler}';
     }
-    $weights: normal, bold, bolder, lighter, 100, 200, 300, 400, 500, 600, 700, 800, 900;
-    $styles: normal, italic, oblique;
-    $whitespace: normal, pre, nowrap, pre-wrap, pre-line;
-    $transform: none, capitalize, uppercase, lowercase, full-width;
+    @if (not map-has-key($font-handlers, $type)) {
+        @error 'Invalid font properties handler type: #{$type}';
+    }
+    $handlers: append(map-get($font-handlers, $type), $handler);
+    $font-handlers: map-merge($font-handlers, ($type: $handlers)) !global;
+}
+
+// Remove custom font properties parser handler
+// 
+// @param string $handler   Handler function name to remove
+@mixin font-remove-handler($handler) {
+    $handlers: ();
+    @each $type, $fh in $font-handlers {
+        $nfh: ();
+        @each $h in $fh {
+            @if ($h != $handler) {
+                $nfh: append($nfh, $h);
+            }
+        }
+        $handlers: map-merge($handlers, ($type: $nfh));
+    }
+    $font-parser-handlers: $handlers !global;
+}
+
+@function font-property-parser-font-family($value, $properties, $options) {
+    @if (map-has-key($properties, font-family)) {
+        @return null;
+    }
+    @if (map-has-key($font-families, $value)) {
+        @return (font-family: join(map-get($font-families, $value), (), comma));
+    }
+    @return null;
+}
+
+@function font-property-parser-font-size($value, $properties, $options) {
+    @if (map-has-key($properties, font-size)) {
+        @return null;
+    }
     $named-font-sizes: xx-small, x-small, small, medium, large, x-large, xx-large, larger, smaller;
     $font-size-units: px, em, rem, vw, vh, vmin, vmax;
-    $letter-spacing-units: px, em, rem;
-    $added: '';
-    $properties: ();
     $is-responsive: function-exists(is-responsive) and is-responsive();
-    @each $item in $font {
-        $ik: null;
-        $iv: $item;
-        $r-size-exists: false;
-        $r-fs-key: 'font-sizes/' + $item;
-        @if (not index($added, font-size) and $is-responsive and not $resolve) {
-            @each $id in responsive-get-ids() {
-                @if (not $r-size-exists) {
-                    @if (r-has($r-fs-key, $id)) {
-                        $r-size-exists: true;
-                    }
+    $r-size-exists: false;
+    $r-fs-key: 'font-sizes/' + $value;
+    $resolve: not map-has-key($options, skip-font-size-resolve);
+    @if ($is-responsive and not $resolve) {
+        @each $id in responsive-get-ids() {
+            @if (not $r-size-exists) {
+                @if (r-has($r-fs-key, $id)) {
+                    $r-size-exists: true;
                 }
             }
         }
-        @if (not index($added, font-family) and map-has-key($font-families, $item)) {
-            $ik: font-family;
-            $iv: join(map-get($font-families, $item), (), comma);
-        } @else if (not index($added, font-size) and $is-responsive and $resolve and r-has($r-fs-key)) {
-            $ik: font-size;
-            $iv: r-get($r-fs-key);
-        } @else if (not index($added, font-size) and $is-responsive and $r-size-exists) {
-            $ik: font-size;
-        } @else if (not index($added, font-size) and index($named-font-sizes, $item)) {
-            $ik: font-size;
-        } @else if (not index($added, font-size) and map-has-key($font-sizes, $item)) {
-            $ik: font-size;
-            $iv: map-get($font-sizes, $item);
-        } @else if (not index($added, font-size) and (type-of($item) == number) and index($font-size-units, unit($item))) {
-            $ik: font-size;
-            $iv: $item;
-        } @else if (not index($added, font-weight) and index($weights, $item)) {
-            $ik: font-weight;
-        } @else if (not index($added, font-style) and index($styles, $item)) {
-            $ik: font-style;
-        } @else if (not index($added, color) and (type-of($item) == color)) {
-            $ik: color;
-        } @else if (not index($added, line-height) and (type-of($item) == number) and not ((unit($item) == em) and (abs($item) <= 0.5))) {
-            $ik: line-height;
-        } @else if (not index($added, line-height) and (type-of($item) == '') and str-index('' + $item, '/') != null) {
-            $item: unquote('' + $item);
-            $a: to-number(str-slice($item, 1, str-index($item, '/') - 1));
-            $b: to-number(str-slice($item, str-index($item, '/') + 1));
-            $ik: line-height;
-            $iv: $a / $b;
-        } @else if (not index($added, letter-spacing) and (type-of($item) == number and index($letter-spacing-units, unit($item)))) {
-            $ik: letter-spacing;
-        } @else if (not index($added, white-space) and index($whitespace, $item)) {
-            $ik: white-space;
-        } @else if (not index($added, text-transform) and index($transform, $item)) {
-            $ik: text-transform;
-        }
-        @if ($ik != null) {
-            @if (($ik == font-size) and (type-of($iv) == number) and (index(px rem, unit($iv)))) {
-                $iv: v($iv);
-            }
-            @if (not $resolve) {
-                $iv: $item;
-            }
-            $properties: map-merge($properties, ($ik: $iv));
-            $added: append($added, $ik);
-        }
     }
+    $result: null;
+    @if ($is-responsive and $resolve and r-has($r-fs-key)) {
+        $result: r-get($r-fs-key);
+    } @else if ($is-responsive and $r-size-exists) {
+        $result: $value;
+    } @else if (index($named-font-sizes, $value)) {
+        $result: $value;
+    } @else if (map-has-key($font-sizes, $value)) {
+        $result: map-get($font-sizes, $value);
+    } @else if ((type-of($value) == number) and index($font-size-units, unit($value))) {
+        $result: $value;
+    }
+    @if ($result == null) {
+        @return null;
+    }
+    @if (type-of($result) == number and index(px rem, unit($result))) {
+        $result: v($result);
+    }
+    @if (not $resolve) {
+        $resolve: $value;
+    }
+    @return (font-size: $result);
+}
+
+@function font-property-parser-font-weight($value, $properties, $options) {
+    @if (map-has-key($properties, font-weight)) {
+        @return null;
+    }
+    $weights: normal, bold, bolder, lighter, 100, 200, 300, 400, 500, 600, 700, 800, 900;
+    @if (index($weights, $value)) {
+        @return (font-weight: $value);
+    }
+    @return null;
+}
+
+@function font-property-parser-font-style($value, $properties, $options) {
+    @if (map-has-key($properties, font-style)) {
+        @return null;
+    }
+    $styles: normal, italic, oblique;
+    @if (index($styles, $value)) {
+        @return (font-style: $value);
+    }
+    @return null;
+}
+
+@function font-property-parser-color($value, $properties, $options) {
+    @if (map-has-key($properties, color)) {
+        @return null;
+    }
+    @if (type-of($value) == color) {
+        @return (color: $value);
+    }
+    @return null;
+}
+
+@function font-property-parser-line-height($value, $properties, $options) {
+    @if (map-has-key($properties, line-height)) {
+        @return null;
+    }
+    @if ((type-of($value) == number) and not ((unit($value) == em) and (abs($value) <= 0.5))) {
+        @return (line-height: $value);
+    } @else if (type-of($value) == '' and str-index('' + $value, '/') != null) {
+        $value: unquote('' + $value);
+        $a: to-number(str-slice($value, 1, str-index($value, '/') - 1));
+        $b: to-number(str-slice($value, str-index($value, '/') + 1));
+        @return (line-height: $a / $b);
+    }
+    @return null;
+}
+
+@function font-property-parser-letter-spacing($value, $properties, $options) {
+    @if (map-has-key($properties, letter-spacing)) {
+        @return null;
+    }
+    $letter-spacing-units: px, em, rem;
+    @if (type-of($value) == number and index($letter-spacing-units, unit($value))) {
+        @return (letter-spacing: $value);
+    }
+    @return null;
+}
+
+@function font-property-parser-white-space($value, $properties, $options) {
+    @if (map-has-key($properties, white-space)) {
+        @return null;
+    }
+    $whitespace: normal, pre, nowrap, pre-wrap, pre-line;
+    @if (index($whitespace, $value)) {
+        @return (white-space: $value);
+    }
+    @return null;
+}
+
+@function font-property-parser-text-transform($value, $properties, $options) {
+    @if (map-has-key($properties, text-transform)) {
+        @return null;
+    }
+    $transform: none, capitalize, uppercase, lowercase, full-width;
+    @if (index($transform, $value)) {
+        @return (text-transform: $value);
+    }
+    @return null;
+}
+
+@function font-property-normalizer-line-height($properties, $options) {
     @if (map-has-key($properties, font-size) and map-has-key($properties, line-height)) {
         $fs: map-get($properties, font-size);
         $lh: map-get($properties, line-height);
@@ -108,19 +212,62 @@ $font-url-prefix: '' !default;
     @return $properties;
 }
 
+@function font-property-normalizer-important($properties, $options) {
+    @if (not map-has-key($options, important)) {
+        @return $properties;
+    }
+    $important: map-get($options, important);
+    @each $prop, $value in $properties {
+        @if (index($important, $prop) != null) {
+            $properties: map-merge($properties, ($prop: $value !important));
+        }
+    }
+    @return $properties;
+}
+
+// Parse given font string into set of CSS properties and their values
+//
+// @param list $font        Font values list to parse
+// @param map $options      Additional options to pass to font parsers
+// @return map
+// noinspection SassScssResolvedByNameOnly
+@function parse-font($font, $options: null) {
+    @if (type-of($font) == map) {
+        // Treat map argument as "already parsed font properties"
+        @return $font;
+    }
+    @if (type-of($options) != map) {
+        $options: ();
+    }
+    $properties: ();
+    @each $item in $font {
+        $handled: false;
+        @each $handler in map-get($font-handlers, parse) {
+            @if (not $handled) {  
+                $r: call($handler, $item, $properties, $options);
+                @if (type-of($r) == map) {
+                    $properties: map-merge($properties, $r);
+                    $handled: true;
+                }
+            }
+        }
+    }
+    @each $handler in map-get($font-handlers, normalize) {
+        $r: call($handler, $properties, $options);
+        @if (type-of($r) == map) {
+            $properties: $r;
+        }
+    }
+    @return $properties;
+}
+
 // Generate font CSS properties from given font string
 //
 // @param list|map $font      Either list of font values list to parse or already parsed list of font properties
-// @param list $important     List of font properties that should be marked as important
-@mixin font($font, $important: '') {
-    @each $prop, $value in parse-font($font) {
-        @if ($value != null) {
-            @if (index($important, $prop) != null) {
-                #{$prop}: $value !important;
-            } @else {
-                #{$prop}: $value;
-            }
-        }
+// @param map|list $options   Map of font parsing options or list of font properties that should be marked as important
+@mixin font($font, $options: null) {
+    @each $prop, $value in parse-font($font, $options) {
+        #{$prop}: $value;
     }
 }
 
@@ -128,30 +275,39 @@ $font-url-prefix: '' !default;
 //
 // @param string $key               Responsive configuration key to take font information from, can be skipped
 // @param list|map $font            Base font information to define together with information from responsive configuration
-// @param list $important           List of font properties that should be marked as important
+// @param map|list $options         Map of font parsing options or list of font properties that should be marked as important
 //noinspection SassScssResolvedByNameOnly
-@mixin r-font($key, $font: '', $important: '') {
+@mixin r-font($key, $font: null, $options: null) {
     @if (type-of($key) != string or (type-of($key) == string and str-index($key, '/') == null)) {
-        @if ($important == '' and $font != '') {
-            $important: $font;
+        @if ($options == null and $font != null) {
+            $options: $font;
         }
         $font: $key;
         $key: null;
     }
-    $suffix: null;
-    $properties: parse-font($font, false);
-    @if (map-has-key($properties, font-size)) {
-        $suffix: map-get($properties, font-size);
-        $properties: map-remove($properties, font-size);
+    $opt: ();
+    @if (type-of($options) == map) {
+        $opt: $options;
+    } @else if (type-of($options) == list or type-of($options) == string) {
+        $opt: (important: $options);
     }
-    @include font($font, $important);
-    @if (length($properties) == 0) {
-        $suffix: $font;
+    $options: $opt;
+    $suffix: null;
+    @if ($font != null) {
+        $properties: parse-font($font, map-merge($options, (skip-font-size-resolve: true)));
+        @if (map-has-key($properties, font-size)) {
+            $suffix: map-get($properties, font-size);
+            $properties: map-remove($properties, font-size);
+        }
+        @include font($font, $options);
+        @if (length($properties) == 0) {
+            $suffix: $font;
+        }
     }
     @if (function-exists(is-responsive) and is-responsive()) {
         @if ($key != null) {
             @include r-each-if($key, false) {
-                @include font(r-get($key), $important);
+                @include font(r-get($key), $options);
             }
         }
         @if ($suffix != null) {
@@ -159,12 +315,12 @@ $font-url-prefix: '' !default;
             $rk: 'font-sizes/' + $suffix;
             @include r-each-if($rk, false) {
                 $found: true;
-                @include font(r-get($rk), $important);
+                @include font(r-get($rk), $options);
             }
             @if (not $found) {
                 $rk: 'fonts/' + $suffix;
                 @include r-each-if($rk, false) {
-                    @include font(r-get($rk), $important);
+                    @include font(r-get($rk), $options);
                 }
             }
         }
