@@ -144,40 +144,48 @@ $font-url-prefix: '' !default;
     }
 }
 
-// Responsive version of font() mixin
-// Works exactly like usual font(), but adds media queries for font-size property
-// if there is responsive configuration for used named font size
+// Responsive version of font() mixin to render font properties based on responsive configuration information
 //
-// @param string|list|map $font     One of:
-//                                  - Responsive configuration key to take font information from 
-//                                  - List of font values to parse with responsive font size or responsive font definition  
-//                                  - Already parsed list of font properties
+// @param string $key               Responsive configuration key to take font information from, can be skipped
+// @param list|map $font            Base font information to define together with information from responsive configuration
 // @param list $important           List of font properties that should be marked as important
 //noinspection SassScssResolvedByNameOnly
-@mixin r-font($font, $important: '') {
-    $responsive: (function-exists(is-responsive) and is-responsive());
-    $font-size: null;
+@mixin r-font($key, $font: '', $important: '') {
+    @if (type-of($key) != string or (type-of($key) == string and str-index($key, '/') == null)) {
+        @if ($important == '' and $font != '') {
+            $important: $font;
+        }
+        $font: $key;
+        $key: null;
+    }
+    $suffix: null;
     $properties: parse-font($font, false);
     @if (map-has-key($properties, font-size)) {
-        $font-size: map-get($properties, font-size);
+        $suffix: map-get($properties, font-size);
+        $properties: map-remove($properties, font-size);
     }
     @include font($font, $important);
     @if (length($properties) == 0) {
-        $font-size: $font;
+        $suffix: $font;
     }
-    @if ($responsive and ($font-size != null)) {
-        @if (str-index($font-size, '/') != null) {
-            @include r-each-if($font-size, false) {
-                @include font(r-get($font-size), $important);
-            }
-        } @else {
-            $key: 'font-sizes/' + $font-size;
-            @include r-each-if($key, false) {
-                @include font($font-size, $important);
-            }
-            $key: 'fonts/' + $font-size;
+    @if (function-exists(is-responsive) and is-responsive()) {
+        @if ($key != null) {
             @include r-each-if($key, false) {
                 @include font(r-get($key), $important);
+            }
+        }
+        @if ($suffix != null) {
+            $found: false;
+            $rk: 'font-sizes/' + $suffix;
+            @include r-each-if($rk, false) {
+                $found: true;
+                @include font(r-get($rk), $important);
+            }
+            @if (not $found) {
+                $rk: 'fonts/' + $suffix;
+                @include r-each-if($rk, false) {
+                    @include font(r-get($rk), $important);
+                }
             }
         }
     }
