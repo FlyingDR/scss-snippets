@@ -78,7 +78,7 @@ $font-handlers: (
         }
         $handlers: map-merge($handlers, ($type: $nfh));
     }
-    $font-parser-handlers: $handlers !global;
+    $font-handlers: $handlers !global;
 }
 
 @function font-property-parser-font-family($value, $properties, $options) {
