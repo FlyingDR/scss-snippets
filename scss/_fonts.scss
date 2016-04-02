@@ -81,6 +81,26 @@ $font-handlers: (
     $font-handlers: $handlers !global;
 }
 
+// Replace custom font properties parser handler with new handler
+// 
+// @param string $handler-to-replace    Handler function name to replace
+// @param string $new-handler           Handler function name to set instead $handler-to-replace
+@mixin font-replace-handler($handler-to-replace, $new-handler) {
+    $handlers: ();
+    @each $type, $fh in $font-handlers {
+        $nfh: ();
+        @each $h in $fh {
+            @if ($h == $handler-to-replace) {
+                $nfh: append($nfh, $new-handler);
+            } @else {
+                $nfh: append($nfh, $h);
+            }
+        }
+        $handlers: map-merge($handlers, ($type: $nfh));
+    }
+    $font-handlers: $handlers !global;
+}
+
 @function font-property-parser-font-family($value, $properties, $options) {
     @if (map-has-key($properties, font-family)) {
         @return null;
