@@ -38,17 +38,30 @@ $font-handlers: (
 //                  and return null if no result is available or ($property: $value) map of properties
 // - normalize      Handler should accept (map $properties, map $options) and return new font properties map
 // 
-// @param string $handler   Handler function name
-// @param string $type      Handler type (parse, normalize)
-@mixin font-add-handler($handler, $type: parse) {
+// @param string $handler           Handler function name
+// @param string $type              Handler type (parse, normalize)
+// @param string|boolean $after     Handler name to insert given handler after, true to set handler at last position, false to set handler at first position 
+@mixin font-add-handler($handler, $type: parse, $after: true) {
     @if (not function-exists($handler)) {
         @error 'Unavailable font properties handler: #{$handler}';
     }
     @if (not map-has-key($font-handlers, $type)) {
         @error 'Invalid font properties handler type: #{$type}';
     }
-    $handlers: append(map-get($font-handlers, $type), $handler);
-    $font-handlers: map-merge($font-handlers, ($type: $handlers)) !global;
+    $result: ();
+    @if ($after == false) {
+        $result: append($result, $handler);
+    }
+    @each $current-handler in map-get($font-handlers, $type) {
+        $result: append($result, $current-handler);
+        @if ($current-handler == $after) {
+            $result: append($result, $handler);
+        }
+    }
+    @if ($after == true) {
+        $result: append($result, $handler);
+    }
+    $font-handlers: map-merge($font-handlers, ($type: $result)) !global;
 }
 
 // Remove custom font properties parser handler
