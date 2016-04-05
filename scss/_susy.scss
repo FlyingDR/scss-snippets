@@ -1,0 +1,21 @@
+// Responsive version of Susy' span() mixin that takes information from responsive configuration
+// Useful in a case if same span definition is applied to different layouts that may result 
+// into different results especially in a case of layouts that use static math
+//
+// @param string $key   Responsive configuration key to take span information from
+@mixin r-span($key) {
+    $default-math: susy-get(math);
+    $default-span: r-get($key);
+    @include r-each(true) {
+        $span: r-get($key, $default-span);
+        @if (susy-get(math) == static) {
+            @if ($span != null) {
+                @include span($span);
+            }
+        } @else {
+            @if ($span != null and ($span != $default-span or susy-get(math) != $default-math)) {
+                @include span($span);
+            }
+        }
+    }
+}
