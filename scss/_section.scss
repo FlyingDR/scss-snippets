@@ -218,8 +218,8 @@ $section-settings: (
         @if (function-exists(is-responsive) and is-responsive()) {
             @include r-each() {
                 $opt: null;
-                @if (r-has(section)) {
-                    $opt: section-parse-options(r-get(section));
+                @if (r-has('/section')) {
+                    $opt: section-parse-options(r-get('/section'));
                 }
                 > #{map-get($settings, inner-selector)} {
                     @include container();

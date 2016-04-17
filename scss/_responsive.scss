@@ -10,6 +10,7 @@ $responsive-current-id: null !default;
 $responsive-get-config-cache: () !default;
 $responsive-get-original-id: null !default;
 $responsive-get-nesting-level: 0 !default;
+$responsive-get-key-prefix: null !default;
 $responsive-is-initialized: false !default;
 $responsive-test-key: '---responsive-test-key---' !default;
 
@@ -212,6 +213,14 @@ $responsive-test-key: '---responsive-test-key---' !default;
         }
     }
     @if ($responsive-get-nesting-level == 0) {
+        @if ($responsive-get-key-prefix != null) {
+            @if (str-slice($key, 1, 1) != '/') {
+                $key: $responsive-get-key-prefix + '/' + $key;
+            } 
+        } 
+        @if (str-slice($key, 1, 1) == '/') {
+            $key: str-slice($key, 2);
+        }
         $responsive-get-original-id: $id !global;
         @if (responsive-has-id($id)) {
             $cid: responsive-id($id);
@@ -300,6 +309,25 @@ $responsive-test-key: '---responsive-test-key---' !default;
     @return responsive-has($key, $id);
 }
 
+@mixin responsive-with($prefix) {
+    @if (str-slice($prefix, 1, 1) == '/') {
+        $prefix: str-slice($prefix, 2);
+    }
+    @if (str-slice($prefix, -1, 1) == '/') {
+        $prefix: str-slice($prefix, 1, -1);
+    }
+    $current-prefix: $responsive-get-key-prefix;
+    $responsive-get-key-prefix: $prefix !global;
+    @content;
+    $responsive-get-key-prefix: $current-prefix !global;
+}
+
+@mixin r-with($prefix) {
+    @include responsive-with($prefix) {
+        @content;
+    }
+}
+
 // Simplification of iteration over available media queries
 //
 // @param mixed $layout     true to use default layout from configuration
@@ -317,8 +345,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
             $responsive-current-id: $id !global;
             @if (($if-key == null) or (responsive-has($if-key))) {
                 $l: null;
-                @if ($layout == true and responsive-has(layout)) {
-                    $l: responsive-get(layout);
+                @if ($layout == true and responsive-has('/layout')) {
+                    $l: responsive-get('/layout');
                 } @else if (type-of($layout) == string) {
                     @if (responsive-has($layout)) {
                         $l: responsive-get($layout);
@@ -328,7 +356,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
                 } @else if (type-of($layout) == list or type-of($layout) == map) {
                     $l: $layout;
                 }
-                @if (($responsive-current-id != $responsive-default-id) and (responsive-has(media-query))) {
+                @if (($responsive-current-id != $responsive-default-id) and (responsive-has('/media-query'))) {
                     @include susy-breakpoint($id) {
                         @if ($l) {
                             @include with-layout($l, true) {
@@ -386,14 +414,14 @@ $responsive-test-key: '---responsive-test-key---' !default;
             @if (length($susy-media) == 0) {
                 $susy-media: () !global;
                 @each $id in responsive-get-ids() {
-                    @if (responsive-has(media-query, $id)) {
-                        $susy-media: map-merge($susy-media, ($id: responsive-get(media-query, $id))) !global;
+                    @if (responsive-has('/media-query', $id)) {
+                        $susy-media: map-merge($susy-media, ($id: responsive-get('/media-query', $id))) !global;
                     }
                 }
             }
             @if (length($susy) == 0) {
-                @if (responsive-has(layout) and responsive-get(layout) != null) {
-                    $susy: responsive-get(layout) !global;
+                @if (responsive-has('/layout') and responsive-get('/layout') != null) {
+                    $susy: responsive-get('/layout') !global;
                     @include global-box-sizing();
                 } @else {
                     @warn 'No default responsive layout is defined';
@@ -428,10 +456,10 @@ $responsive-test-key: '---responsive-test-key---' !default;
 
 // Responsive configuration handler to simplify definition of Susy layouts
 @function responsive-handle-layout($config, $id) {
-    @if (not r-has(layout, $id)) {
+    @if (not r-has('/layout', $id)) {
         @return $config;
     }
-    $layout: r-get(layout, null, $id);
+    $layout: r-get('/layout', null, $id);
     @if (type-of($layout) != map) {
         $layout: parse-grid($layout);
     }
@@ -441,7 +469,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
     $have-gutters: map-has-key($layout, gutters);
     $have-column-width: map-has-key($layout, column-width);
     $static-math: ($have-math and map-get($layout, math) == static) or false;
-    
+
     // Normalize numeric values
     @each $property in (container, column-width, outer-padding, inner-padding) {
         @if (map-has-key($layout, $property)) {
@@ -495,17 +523,17 @@ $responsive-test-key: '---responsive-test-key---' !default;
 
 // Responsive configuration handler to simplify definition media queries
 @function responsive-handle-media-query($config, $id) {
-    @if (not r-has(media-query, $id)) {
+    @if (not r-has('/media-query', $id)) {
         @return $config;
     }
     $config-ids: responsive-get-ids();
     $containers: ();
     @each $rid in $config-ids {
-        @if (r-has(media-query-container, $rid)) {
-            $containers: map-merge($containers, ($rid: r-get(media-query-container, null, $rid)));
+        @if (r-has('/media-query-container', $rid)) {
+            $containers: map-merge($containers, ($rid: r-get('/media-query-container', null, $rid)));
         }
     }
-    $query: r-get(media-query, null, $id);
+    $query: r-get('/media-query', null, $id);
     @if (type-of($query) == map) {
         @each $key, $value in $query {
             @if (index($config-ids, $value)) {
