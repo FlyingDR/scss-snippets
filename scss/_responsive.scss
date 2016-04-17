@@ -11,6 +11,7 @@ $responsive-get-config-cache: () !default;
 $responsive-get-original-id: null !default;
 $responsive-get-nesting-level: 0 !default;
 $responsive-get-key-prefix: null !default;
+$responsive-get-default-key: null !default;
 $responsive-is-initialized: false !default;
 $responsive-test-key: '---responsive-test-key---' !default;
 
@@ -180,7 +181,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
 // @param string|boolean|null $id   Responsive configuration id (@see r-id())
 // @return mixed
 // noinspection CssInvalidFunction
-@function r-get($key, $default: null, $id: null) {
+@function r-get($key: null, $default: null, $id: null) {
     @if ($id == null) {
         @if (r-has-config($default)) {
             $id: $default;
@@ -188,6 +189,14 @@ $responsive-test-key: '---responsive-test-key---' !default;
         }
     }
     @if ($responsive-get-nesting-level == 0) {
+        @if ($key == null) {
+            @if ($responsive-get-default-key != null) {
+                $key: $responsive-get-default-key;
+            } @else {
+                @warn 'r-get() allows skipping key definition only inside r-each() with $if-key set';
+                @return null;
+            }
+        }
         @if ($responsive-get-key-prefix != null) {
             @if (str-slice($key, 1, 1) != '/') {
                 $key: $responsive-get-key-prefix + '/' + $key;
@@ -270,7 +279,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
 // @param string $key               Configuration key name, multiple level keys are defined as a/b/c
 // @param string|boolean|null $id   Responsive configuration id (@see r-id())
 // @return boolean
-@function r-has($key, $id: null) {
+@function r-has($key: null, $id: null) {
     @return (r-get($key, $responsive-test-key, $id) != $responsive-test-key);
 }
 
@@ -295,6 +304,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
 //                          list or map to define explicit layout
 // @param string $if-key    Apply media query configuration only if given key is exists in corresponding responsive configuration
 @mixin r-each($layout: true, $if-key: null) {
+    $current-default-key: $responsive-get-default-key;
+    $responsive-get-default-key: $if-key !global;
     @each $id in r-get-ids() {
         @if ($responsive-current-id != null) {
             @if ($responsive-current-id == $id) {
@@ -338,6 +349,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
             $responsive-current-id: null !global;
         }
     }
+    $responsive-get-default-key: $current-default-key !global;
 }
 
 // Version of r-each() with mandatory $if-key
