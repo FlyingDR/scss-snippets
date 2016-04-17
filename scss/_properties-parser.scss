@@ -1,0 +1,181 @@
+// Types of handlers for properties parsers:
+//
+// - prepare        Handler should accept (list $properties, map $options) and return either map with any of keys (properties, options, result) or null
+// - parse          Handler should accept (mixed $value, map $result, map $options) arguments 
+//                  and return null if no result is available or ($property: $value) map of resulted properties
+// - normalize      Handler should accept (map $result, map $options) and return new resulted properties map
+// 
+$properties-parser-registered-handlers: () !default;
+
+// Determine if properties parser with given id is already registered
+// 
+// @param string $parser-id     Properties parser id
+// @return boolean
+@function properties-parser-is-registered($parser-id) {
+    @return map-has-key($properties-parser-registered-handlers, $parser-id);
+}
+
+// Register new properties parser
+// 
+// @param string $parser-id     Properties parser id
+// @return map                  Newly registered parser
+@function register-properties-parser($parser-id) {
+    @if (properties-parser-is-registered($parser-id)) {
+        @error 'Properties parser with given id "#{$parser-id}" is already registered';
+    }
+    $parser: (prepare:(), parse: (), normalize: ());
+    $properties-parser-registered-handlers: map-merge($properties-parser-registered-handlers, ($parser-id: $parser)) !global;
+    @return $parser;
+}
+
+// Get list of properties parser handlers of given type or whole set of properties handlers for given properties parser
+// 
+// @param string $parser-id     Properties parser id
+// @param string|null $type     Type of handlers to get or null to get whole parser
+// @return list|map
+@function properties-parser-get-handlers($parser-id, $type: null) {
+    $parser: ();
+    @if (properties-parser-is-registered($parser-id)) {
+        $parser: map-get($properties-parser-registered-handlers, $parser-id);
+    } @else {
+        $parser: register-properties-parser($parser-id);
+    }
+    @if ($type == null) {
+        @return $parser;
+    } @else if (map-has-key($parser, $type)) {
+        @return map-get($parser, $type);
+    } @else {
+        @error 'Invalid properties parser handlers type: #{$type}';
+    }
+}
+
+// Add handler for given properties parser
+// 
+// @param string $parser-id         Properties parser id to work with
+// @param string $handler           Handler function name
+// @param string $type              Handler type (parse, normalize)
+// @param string|boolean $after     Handler name to insert given handler after
+//                                  true to set handler at last position
+//                                  false to set handler at first position
+// @return map                      Modified parser structure
+@function properties-parser-add-handler($parser-id, $handler, $type: parse, $after: true) {
+    @if (not function-exists($handler)) {
+        @error 'Unavailable properties parser handler: #{$handler}';
+    }
+    $parser: properties-parser-get-handlers($parser-id);
+    @if (not map-has-key($parser, $type)) {
+        @error 'Invalid parser properties handler type: #{$type}';
+    }
+    $result: ();
+    @if ($after == false) {
+        $result: append($result, $handler);
+    }
+    @each $current-handler in map-get($parser, $type) {
+        $result: append($result, $current-handler);
+        @if ($current-handler == $after) {
+            $result: append($result, $handler);
+        }
+    }
+    @if ($after == true) {
+        $result: append($result, $handler);
+    }
+    $parser: map-merge($parser, ($type: $result));
+    $properties-parser-registered-handlers: map-merge($properties-parser-registered-handlers, ($parser-id: $parser)) !global;
+    @return $parser;
+}
+
+// Remove properties parser handler from given parser
+// 
+// @param string $parser-id     Properties parser id to work with
+// @param string $handler       Handler function name to remove
+// @return map                  Modified parser structure
+@function properties-parser-remove-handler($parser-id, $handler) {
+    $parser: properties-parser-get-handlers($parser-id);
+    $result: ();
+    @each $type, $handlers in $parser {
+        $nfh: ();
+        @each $h in $handlers {
+            @if ($h != $handler) {
+                $nfh: append($nfh, $h);
+            }
+        }
+        $result: map-merge($result, ($type: $nfh));
+    }
+    $properties-parser-registered-handlers: map-merge($properties-parser-registered-handlers, ($parser-id: $parser)) !global;
+    @return $parser;
+}
+
+// Replace properties parser handler with new handler
+// 
+// @param string $parser-id             Properties parser id to work with
+// @param string $handler-to-replace    Handler function name to replace
+// @param string $new-handler           Handler function name to set instead $handler-to-replace
+// @return map                          Modified parser structure
+@function properties-parser-replace-handler($parser-id, $handler-to-replace, $new-handler) {
+    $parser: properties-parser-get-handlers($parser-id);
+    $result: ();
+    @each $type, $handlers in $parser {
+        $nfh: ();
+        @each $h in $handlers {
+            @if ($h == $handler-to-replace) {
+                $nfh: append($nfh, $new-handler);
+            } @else {
+                $nfh: append($nfh, $h);
+            }
+        }
+        $result: map-merge($result, ($type: $nfh));
+    }
+    $properties-parser-registered-handlers: map-merge($properties-parser-registered-handlers, ($parser-id: $parser)) !global;
+    @return $parser;
+}
+
+// Parse given shortened list of properties into map of properties and their values
+//
+// @param string $parser-id     Properties parser id to work with
+// @param list $properties      List of properties to parse
+// @param map $options          Additional options to pass to parser handlers
+// @return map                  Parsed properties
+// noinspection SassScssResolvedByNameOnly
+@function parse-properties($parser-id, $properties, $options: null) {
+    @if (type-of($properties) == map) {
+        // Treat map argument as "already parsed properties map"
+        @return $properties;
+    }
+    @if (type-of($options) == null) {
+        $options: ();
+    }
+    $result: ();
+    @each $handler in properties-parser-get-handlers($parser-id, prepare) {
+        $r: call($handler, $properties, $options);
+        @if (type-of($r) == map) {
+            @if (map-has-key($r, properties)) {
+                $properties: map-get($r, properties);
+            }
+            @if (map-has-key($r, options)) {
+                $options: map-get($r, options);
+            }
+            @if (map-has-key($r, result)) {
+                $result: map-get($r, result);
+            }
+        }
+    }
+    @each $item in $properties {
+        $handled: false;
+        @each $handler in properties-parser-get-handlers($parser-id, parse) {
+            @if (not $handled) {
+                $r: call($handler, $item, $result, $options);
+                @if (type-of($r) == map) {
+                    $result: map-merge($result, $r);
+                    $handled: true;
+                }
+            }
+        }
+    }
+    @each $handler in properties-parser-get-handlers($parser-id, normalize) {
+        $r: call($handler, $result, $options);
+        @if (type-of($r) == map) {
+            $result: $r;
+        }
+    }
+    @return $result;
+}

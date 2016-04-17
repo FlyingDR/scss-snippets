@@ -14,7 +14,8 @@ $font-default-properties: (
     font-style: normal,
 ) !default;
 $font-url-prefix: '' !default;
-$font-handlers: (
+$font-parser-id: scss-snippets-fonts !default;
+$font-parser-handlers: (
     prepare: (),
     parse: (
         font-property-parser-font-family,
@@ -33,76 +34,6 @@ $font-handlers: (
         font-property-normalizer-important,
     ),
 ) !default;
-
-// Add custom handler for font properties. Various types of handlers are accepted, determined by $type argument:
-// 
-// - prepare        Handler should accept (list $font, map $options) and return either map with any of keys (font, options, properties) or null
-// - parse          Handler should accept (mixed $value, map $properties, map $options) arguments 
-//                  and return null if no result is available or ($property: $value) map of properties
-// - normalize      Handler should accept (map $properties, map $options) and return new font properties map
-// 
-// @param string $handler           Handler function name
-// @param string $type              Handler type (parse, normalize)
-// @param string|boolean $after     Handler name to insert given handler after, true to set handler at last position, false to set handler at first position 
-@mixin font-add-handler($handler, $type: parse, $after: true) {
-    @if (not function-exists($handler)) {
-        @error 'Unavailable font properties handler: #{$handler}';
-    }
-    @if (not map-has-key($font-handlers, $type)) {
-        @error 'Invalid font properties handler type: #{$type}';
-    }
-    $result: ();
-    @if ($after == false) {
-        $result: append($result, $handler);
-    }
-    @each $current-handler in map-get($font-handlers, $type) {
-        $result: append($result, $current-handler);
-        @if ($current-handler == $after) {
-            $result: append($result, $handler);
-        }
-    }
-    @if ($after == true) {
-        $result: append($result, $handler);
-    }
-    $font-handlers: map-merge($font-handlers, ($type: $result)) !global;
-}
-
-// Remove custom font properties parser handler
-// 
-// @param string $handler   Handler function name to remove
-@mixin font-remove-handler($handler) {
-    $handlers: ();
-    @each $type, $fh in $font-handlers {
-        $nfh: ();
-        @each $h in $fh {
-            @if ($h != $handler) {
-                $nfh: append($nfh, $h);
-            }
-        }
-        $handlers: map-merge($handlers, ($type: $nfh));
-    }
-    $font-handlers: $handlers !global;
-}
-
-// Replace custom font properties parser handler with new handler
-// 
-// @param string $handler-to-replace    Handler function name to replace
-// @param string $new-handler           Handler function name to set instead $handler-to-replace
-@mixin font-replace-handler($handler-to-replace, $new-handler) {
-    $handlers: ();
-    @each $type, $fh in $font-handlers {
-        $nfh: ();
-        @each $h in $fh {
-            @if ($h == $handler-to-replace) {
-                $nfh: append($nfh, $new-handler);
-            } @else {
-                $nfh: append($nfh, $h);
-            }
-        }
-        $handlers: map-merge($handlers, ($type: $nfh));
-    }
-    $font-handlers: $handlers !global;
-}
 
 @function font-property-parser-font-family($value, $properties, $options) {
     @if (map-has-key($properties, font-family)) {
@@ -272,43 +203,18 @@ $font-handlers: (
         // Treat map argument as "already parsed font properties"
         @return $font;
     }
+    @if (type-of($font-parser-handlers) == map) {
+        @each $type, $handlers in $font-parser-handlers {
+            @each $handler in $handlers {
+                $p: properties-parser-add-handler($font-parser-id, $handler, $type);
+            }
+        }
+        $font-parser-handlers: null !global;
+    }
     @if (type-of($options) != map) {
         $options: ();
     }
-    $properties: ();
-    @each $handler in map-get($font-handlers, prepare) {
-        $r: call($handler, $font, $options);
-        @if (type-of($r) == map) {
-            @if (map-has-key($r, font)) {
-                $font: map-get($r, font);
-            }
-            @if (map-has-key($r, options)) {
-                $options: map-get($r, options);
-            }
-            @if (map-has-key($r, properties)) {
-                $properties: map-get($r, properties);
-            }
-        }
-    }
-    @each $item in $font {
-        $handled: false;
-        @each $handler in map-get($font-handlers, parse) {
-            @if (not $handled) {  
-                $r: call($handler, $item, $properties, $options);
-                @if (type-of($r) == map) {
-                    $properties: map-merge($properties, $r);
-                    $handled: true;
-                }
-            }
-        }
-    }
-    @each $handler in map-get($font-handlers, normalize) {
-        $r: call($handler, $properties, $options);
-        @if (type-of($r) == map) {
-            $properties: $r;
-        }
-    }
-    @return $properties;
+    @return parse-properties($font-parser-id, $font, $options);
 }
 
 // Generate font CSS properties from given font string
