@@ -125,7 +125,7 @@ $font-handlers: (
     $r-fs-key: 'font-sizes/' + $value;
     $resolve: not map-has-key($options, skip-font-size-resolve);
     @if ($is-responsive and not $resolve) {
-        @each $id in responsive-get-ids() {
+        @each $id in r-get-ids() {
             @if (not $r-size-exists) {
                 @if (r-has($r-fs-key, $id)) {
                     $r-size-exists: true;
