@@ -1,77 +1,199 @@
-// Generate offsets based on provided information
+// Parse given offset information 
 // 
-// Offset can be defined as list of properties, it can include:
-// - offset values (either explicit or defined in units)
-// - offset layout definition (either complete layout name or its shorthand)
-// - "auto" to enable auto offset 
-// - importance modifier override ("!", "important", "!important")
-// - offset type override ("margin" or "padding")
+// @param list $offset          List of offset properties to parse
+// @param list|map $options     Offset options to use for parsing (will override options given in $offset)
+// @return map
+@function parse-offset($offset, $options: null) {
+    $parser-id: scss-snippets-offset;
+    @if (not properties-parser-is-registered($parser-id)) {
+        $p: register-properties-parser($parser-id);
+        $p: properties-parser-add-handler($parser-id, offset-property-parser-options-handler, prepare);
+        $p: properties-parser-add-handler($parser-id, offset-property-parser-values-handler, prepare);
+        $p: properties-parser-add-handler($parser-id, offset-property-parser-values-renderer, parse);
+    }
+    @return parse-properties($parser-id, $offset, $options);
+}
+
+// Generate element offsets based on provided information
 // 
-// @param list|number $offset   Either numeric offset value or list of offset information to parse
-// @param string $layout        Offset layout to use
-// @param boolean $auto         TRUE to add "auto" offsets for vertical/horizontal offset layouts
-// @param boolean $important    TRUE to add !important modifier for generated offsets
-// @param string $property      Offset property to use
-@mixin offset($offset, $layout: null, $auto: false, $important: false, $property: margin) {
-    $offset-layouts: (
+// @param list $offset          List of offset properties to parse
+// @param list|map $options     Offset options to use for parsing (will override options given in $offset)
+@mixin offset($offset, $options: null) {
+    @each $prop, $value in parse-offset($offset, $options) {
+        #{$prop}: $value;
+    }
+}
+
+// Generate element offsets based on information from responsive configuration
+// 
+// @param string $key           Key into responsive configuration to use
+// @param list $offset          List of offset properties to parse
+// @param list|map $options     Offset options to use for parsing (will override options given in $offset)
+@mixin r-offset($key, $options: null) {
+    @if (function-exists(is-responsive) and is-responsive()) {
+        @include r-each-if($key) {
+            @include offset(r-get(), $options);
+        }
+    }
+}
+
+// Offset options normalization. Part of offset properties parser handlers set
+// 
+// @param list|map $options     Offset options to normalize
+// @return map
+// @internal
+@function offset-normalize-options($options) {
+    $option-keys: layout auto important property;
+    $layouts: (
         t: top,
         b: bottom,
-        l: left, 
+        l: left,
         r: right,
         v: vertical,
         h: horizontal,
     );
-    @if (map-has-key($offset-layouts, $layout)) {
-        $layout: map-get($offset-layouts, $layout);
-    }
-    @if (type-of($offset) == list) {
-        $value: ();
-        @each $v in $offset {
-            @if ($v == margin or $v == padding) {
-                $type: $v;
-            } @else if ($v == '!' or $v == important or $v == '!important') {
-                $important: true;
-            } @else if ($v == auto) {
-                $auto: true;
-            } @else if (map-has-key($offset-layouts, $v)) {
-                $layout: map-get($offset-layouts, $v);
-            } @else {
-                $value: append($value, v($v));
+    $css-properties: (
+        m: margin,
+        p: padding,
+    );
+    $important: (i, important, '!', '!important');
+    $r-options: ();
+    $remaining: ();
+    @if (type-of($options) == map) {
+        @each $name, $value in $options {
+            @if ($name == layout and index(map-values($layouts, $value))) {
+                $r-options: map-merge($r-options, (layout: $value));
+            } @else if ($name == auto or $name == important) {
+                @if ($value) {
+                    $value: true;
+                } @else {
+                    $value: false;
+                }
+                $r-options: map-merge($r-options, ($name: $value));
+            } @else if ($name == property and index(map-values($css-properties), $value)) {
+                $r-options: map-merge($r-options, (property: $value));
             }
         }
-        $offset: $value;
-    } @else if (type-of($offset) == number) {
-        $offset: v($offset);
-    } @else {
-        @error 'offset() accepts only list or number as argument, #{type-of($offset)} given';
+    } @else if (type-of($options) == list or type-of($options) == string or type-of($options) == number) {
+        @each $option in $options {
+            @if (type-of($option) == string) {
+                $option: to-lower-case($option);
+                @if (index($layouts, $option)) {
+                    $r-options: map-merge($r-options, (layout: $option));
+                } @else if (index($css-properties, $option)) {
+                    $r-options: map-merge($r-options, (property: $option));
+                } @else if (index($important, $option)) {
+                    $r-options: map-merge($r-options, (important: true));
+                } @else if ($option == auto) {
+                    $r-options: map-merge($r-options, (auto: true));
+                } @else {
+                    @for $i from 1 through str-length($option) {
+                        $char: str-slice($option, $i, $i);
+                        @if (map-has-key($layouts, $char)) {
+                            $r-options: map-merge($r-options, (layout: map-get($layouts, $char)));
+                        } @else if (map-has-key($css-properties, $char)) {
+                            $r-options: map-merge($r-options, (property: map-get($css-properties, $char)));
+                        } @else if (index($important, $char)) {
+                            $r-options: map-merge($r-options, (important: true));
+                        } @else if ($char == 'a') {
+                            $r-options: map-merge($r-options, (auto: true));
+                        }
+                    }
+                }
+            } @else {
+                $remaining: append($remaining, v($option));
+            }
+        }
     }
-    
-    @if ($important) {
-        $important: ' !important';
-    } @else {
-        $important: '';
-    }
+    @return (properties: $remaining, options: $r-options);
+}
 
-    @if (index((top, bottom, left, right), $layout) and length($offset) >= 1) {
-        #{$property}-#{$layout}: nth($offset, 1)#{$important};
-    } @else if (index((vertical, horizontal), $layout) and length($offset) >= 1) {
-        $first: nth($offset, 1);
+// Offset options parser handler. Part of offset properties parser handlers set
+// 
+// @param list $properties 
+// @param map $options     
+// @return map
+// @internal
+@function offset-property-parser-options-handler($properties, $options) {
+    $default-options: (
+        layout: null,
+        auto: false,
+        important: false,
+        property: margin
+    );
+    $parsed-properties: offset-normalize-options($properties);
+    $parsed-options: offset-normalize-options($options);
+    $r-properties: ();
+    $p: null;
+    @if (map-has-key($parsed-properties, properties)) {
+        $p: map-get($parsed-properties, properties);
+        @if (type-of($p) == list and length($p)) {
+            $r-properties: join($r-properties, $p);
+        }
+    }
+    $p: null;
+    @if (map-has-key($parsed-options, properties)) {
+        $p: map-get($parsed-options, properties);
+        @if (type-of($p) == list and length($p)) {
+            $r-properties: join($r-properties, $p);
+        }
+    }
+    $r-options: $default-options;
+    $p: null;
+    @if (map-has-key($parsed-properties, options)) {
+        $p: map-get($parsed-properties, options);
+        @if (type-of($p) == map and length($p)) {
+            $r-options: map-merge($r-options, $p);
+        }
+    }
+    $p: null;
+    @if (map-has-key($parsed-options, options)) {
+        $p: map-get($parsed-options, options);
+        @if (type-of($p) == map and length($p)) {
+            $r-options: map-merge($r-options, $p);
+        }
+    }
+    @return (properties: $r-properties, options: $r-options);
+}
+
+// Offset options parser handler. Part of offset properties parser handlers set
+// 
+// @param list $properties      
+// @param map $options     
+// @return map
+// @internal
+@function offset-property-parser-values-handler($properties, $options) {
+    $layout: map-get($options, layout);
+    $auto: map-get($options, auto);
+    $important: map-get($options, important);
+    $property: map-get($options, property);
+    $result: ();
+
+    @if ($important) {
+        $important: unquote('!important');
+    } @else {
+        $important: null;
+    }
+    @if (index((top, bottom, left, right), $layout) and length($properties) >= 1) {
+        $result: map-merge($result, (#{$property}-#{$layout}: append(nth($properties, 1), $important)));
+    } @else if (index((vertical, horizontal), $layout) and length($properties) >= 1) {
+        $first: nth($properties, 1);
         $second: null;
-        @if (length($offset) >= 2) {
-            $second: nth($offset, 2);
+        @if (length($properties) >= 2) {
+            $second: nth($properties, 2);
         }
         @if ($auto) {
             @if ($layout == vertical) {
                 @if ($second != null) {
-                    #{$property}: $first auto $second#{$important};
+                    $result: map-merge($result, (#{$property}: append($first auto $second, $important)));
                 } @else {
-                    #{$property}: $first auto#{$important};
+                    $result: map-merge($result, (#{$property}: append($first auto, $important)));
                 }
             } @else {
                 @if ($second != null) {
-                    #{$property}: auto $first auto $second#{$important};
+                    $result: map-merge($result, (#{$property}: append(auto $first auto $second, $important)));
                 } @else {
-                    #{$property}: auto $first#{$important};
+                    $result: map-merge($result, (#{$property}: append(auto $first, $important)));
                 }
             }
         } @else {
@@ -79,29 +201,24 @@
                 $second: $first;
             }
             @if ($layout == vertical) {
-                #{$property}-top: $first#{$important};
-                #{$property}-bottom: $second#{$important};
+                $result: map-merge($result, (#{$property}-top: append($first, $important), #{$property}-bottom: append($second, $important)));
             } @else {
-                #{$property}-left: $second#{$important};
-                #{$property}-right: $first#{$important};
+                $result: map-merge($result, (#{$property}-left: append($second, $important), #{$property}-right:append($first, $important)));
             }
         }
     } @else {
-        #{$property}: $offset#{$important};
+        $result: map-merge($result, (#{$property}: append($properties, $important)));
     }
+    @return (properties: $result);
 }
 
-// Generate element offsets based on information from responsive configuration
+// Offset options parser handler. Part of offset properties parser handlers set
 // 
-// @param string $key           Key into responsive configuration to use
-// @param string $layout        Offset layout to use
-// @param boolean $auto         TRUE to add "auto" offsets for vertical/horizontal offset layouts
-// @param boolean $important    TRUE to add !important modifier for generated offsets
-// @param string $property      Offset property to use
-@mixin r-offset($key, $layout: null, $auto: false, $important: false, $property: margin) {
-    @if (function-exists(is-responsive) and is-responsive()) {
-        @include r-each-if($key) {
-            @include offset(r-get($key), $layout, $auto, $important, $property);
-        }
-    }
+// @param mixed $value
+// @param map $result
+// @param map $options     
+// @return map
+// @internal
+@function offset-property-parser-values-renderer($value, $result, $options) {
+    @return (nth($value, 1): nth($value, 2));
 }
