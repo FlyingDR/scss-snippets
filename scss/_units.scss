@@ -17,6 +17,9 @@ $units-initialized: false !default;
         $unit: $units-current-unit;
     }
     @each $v in $value {
+        @if (type-of($v) == list and length($v) == 1) {
+            $v: nth($v, 1);
+        } 
         @if (type-of($v) == number) {
             @if (unitless($v) and $v != 0) {
                 //noinspection CssInvalidFunction
@@ -34,7 +37,9 @@ $units-initialized: false !default;
                 }
             }
         }
-        $result: append($result, $v);
+        @if ($v != '' and $v != null) {
+            $result: append($result, $v);
+        }
     }
     @if ($important) {
         $result: append($result, !important);
