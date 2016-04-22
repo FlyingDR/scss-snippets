@@ -365,14 +365,17 @@ $font-parser-handlers: (
     $font-sizes: map-merge($font-sizes, $sizes) !global;
 }
 
-@if (not function-exists(font-url)) {
-    @function font-url($path) {
-        $url: $font-url-prefix;
-        @if (($url != '') and str_slice($url, -1) != '/') {
-            $url: $url + '/';
-        }
-        @return unquote("url('#{$url + $path}')");
+// Generate font url for given font path
+// 
+// @param string $path      Path to font file
+// @return string
+// @internal
+@function font-url($path) {
+    $url: $font-url-prefix;
+    @if (($url != '') and str_slice($url, -1) != '/') {
+        $url: $url + '/';
     }
+    @return unquote("url('#{$url + $path}')");
 }
 
 // Render registered font faces definition
