@@ -202,23 +202,24 @@ $responsive-test-key: '---responsive-test-key---' !default;
         @if ($responsive-get-key-prefix != null) {
             @if (str-slice($key, 1, 1) != '/') {
                 $key: $responsive-get-key-prefix + '/' + $key;
-            } 
-        } 
+            }
+        }
         @if (str-slice($key, 1, 1) == '/') {
             $key: str-slice($key, 2);
         }
         $responsive-get-original-id: $id !global;
-        @if (r-has-id($id)) {
+        @if (r-has-config($id)) {
             $cid: r-id($id);
             $cache-type: 'get';
             @if ($default == $responsive-test-key) {
                 $cache-type: 'has';
             }
-            $cache-key: '#{$cache-type}|#{$cid}|#{$key}';
+            $cache-key: $cache-type $cid $key;
             @if (map-has-key($responsive-cache-get, $cache-key)) {
                 @return map-get($responsive-cache-get, $cache-key);
             }
         }
+        $responsive-get-original-id: $id !global;
     }
     $responsive-get-nesting-level: ($responsive-get-nesting-level + 1) !global;
     $id: r-id($id);
@@ -262,13 +263,13 @@ $responsive-test-key: '---responsive-test-key---' !default;
     }
     $responsive-get-nesting-level: ($responsive-get-nesting-level - 1) !global;
     @if ($responsive-get-nesting-level == 0) {
-        @if (r-has-id($responsive-get-original-id)) {
+        @if (r-has-config($responsive-get-original-id)) {
             $cid: r-id($responsive-get-original-id);
             $cache-type: 'get';
             @if ($default == $responsive-test-key) {
                 $cache-type: 'has';
             }
-            $cache-key: '#{$cache-type}|#{$cid}|#{$full-key}';
+            $cache-key: $cache-type $cid $full-key;
             $responsive-cache-get: map-merge($responsive-cache-get, ($cache-key: $result)) !global;
         }
         $responsive-get-original-id: null !global;
