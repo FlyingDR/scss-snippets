@@ -393,22 +393,6 @@ $responsive-test-key: '---responsive-test-key---' !default;
             }
         }
         $responsive-is-initialized: true !global;
-        //noinspection SassScssResolvedByNameOnly
-        @if (function-exists(v) and global-variable-exists(units-rem-font-size) and current-unit(true) == rem) {
-            @each $id, $query in $susy-media {
-                $query: susy-parse-media($query);
-                @if (map-has-key($query, min-resolution)) {
-                    $factor: map-get($query, min-resolution);
-                    @if (type-of($factor) == number and unit($factor) == dppx) {
-                        @include susy-breakpoint($query) {
-                            html, body {
-                                font-size: v($units-rem-font-size, px) / strip-units($factor);
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
     $responsive-get-config-cache: () !global;
 }
