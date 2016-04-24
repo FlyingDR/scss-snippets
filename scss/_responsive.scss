@@ -7,11 +7,13 @@ $responsive-config-handlers: (
 $responsive-abstract-configurations: () !default;
 $responsive-default-id: null !default;
 $responsive-current-id: null !default;
-$responsive-get-config-cache: () !default;
 $responsive-get-original-id: null !default;
 $responsive-get-nesting-level: 0 !default;
 $responsive-get-key-prefix: null !default;
 $responsive-get-default-key: null !default;
+$responsive-cache-get: () !default;
+$responsive-cache-layout: () !default;
+$responsive-cache-media-query: () !default;
 $responsive-is-initialized: false !default;
 $responsive-test-key: '---responsive-test-key---' !default;
 
@@ -71,7 +73,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
     $responsive-config: map-merge($responsive-config, ($id: $config)) !global;
     @each $handler in $responsive-config-handlers {
         $c: call($handler, $config, $id);
-        $responsive-get-config-cache: () !global;
+        $responsive-cache-get: () !global;
         @if (type-of($c) == map) {
             $config: $c;
             $responsive-config: map-merge($responsive-config, ($id: $config)) !global;
@@ -213,8 +215,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
                 $cache-type: 'has';
             }
             $cache-key: '#{$cache-type}|#{$cid}|#{$key}';
-            @if (map-has-key($responsive-get-config-cache, $cache-key)) {
-                @return map-get($responsive-get-config-cache, $cache-key);
+            @if (map-has-key($responsive-cache-get, $cache-key)) {
+                @return map-get($responsive-cache-get, $cache-key);
             }
         }
     }
@@ -267,7 +269,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
                 $cache-type: 'has';
             }
             $cache-key: '#{$cache-type}|#{$cid}|#{$full-key}';
-            $responsive-get-config-cache: map-merge($responsive-get-config-cache, ($cache-key: $result)) !global;
+            $responsive-cache-get: map-merge($responsive-cache-get, ($cache-key: $result)) !global;
         }
         $responsive-get-original-id: null !global;
     }
@@ -315,8 +317,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
             $responsive-current-id: $id !global;
             @if (($if-key == null) or (r-has($if-key))) {
                 $l: null;
-                @if ($layout == true and r-has('/layout')) {
-                    $l: r-get('/layout');
+                @if ($layout == true and map-get($responsive-cache-layout, $id) != null) {
+                    $l: map-get($responsive-cache-layout, $id);
                 } @else if (type-of($layout) == string) {
                     @if (r-has($layout)) {
                         $l: r-get($layout);
@@ -326,7 +328,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
                 } @else if (type-of($layout) == list or type-of($layout) == map) {
                     $l: $layout;
                 }
-                @if (($responsive-current-id != $responsive-default-id) and (r-has('/media-query'))) {
+                @if (($responsive-current-id != $responsive-default-id) and map-get($responsive-cache-media-query, $id) != null) {
                     @include susy-breakpoint($id, false) {
                         @if ($l) {
                             @include with-layout($l, true) {
@@ -378,9 +380,13 @@ $responsive-test-key: '---responsive-test-key---' !default;
             @if (length($susy-media) == 0) {
                 $susy-media: () !global;
                 @each $id in r-get-ids() {
+                    $mq: null;
                     @if (r-has('/media-query', $id)) {
-                        $susy-media: map-merge($susy-media, ($id: r-get('/media-query', $id))) !global;
+                        $mq: r-get('/media-query', $id);
+                        $responsive-cache-media-query: map-merge($responsive-cache-media-query, ($id: $mq)) !global;
+                        $susy-media: map-merge($susy-media, ($id: $mq)) !global;
                     }
+                    $responsive-cache-layout: map-merge($responsive-cache-layout, ($id: r-get('/layout', null, $id))) !global;
                 }
             }
             @if (length($susy) == 0) {
@@ -394,7 +400,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
         }
         $responsive-is-initialized: true !global;
     }
-    $responsive-get-config-cache: () !global;
+    $responsive-cache-get: () !global;
 }
 
 // Determine if responsive module can be used
