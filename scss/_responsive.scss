@@ -327,7 +327,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
                     $l: $layout;
                 }
                 @if (($responsive-current-id != $responsive-default-id) and (r-has('/media-query'))) {
-                    @include susy-breakpoint($id) {
+                    @include susy-breakpoint($id, false) {
                         @if ($l) {
                             @include with-layout($l, true) {
                                 @content;
