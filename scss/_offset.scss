@@ -1,3 +1,7 @@
+$offset-cache-options-normalizer: () !default;
+$offset-cache-options-handler: () !default;
+$offset-cache-values-handler: () !default;
+
 // Parse given offset information 
 // 
 // @param list $offset          List of offset properties to parse
@@ -43,6 +47,11 @@
 // @return map
 // @internal
 @function offset-normalize-options($options) {
+    $cache-key: $options;
+    @if (map-has-key($offset-cache-options-normalizer, $cache-key)) {
+        @return map-get($offset-cache-options-normalizer, $cache-key);
+    }
+
     $option-keys: layout auto important property;
     $layouts: (
         t: top,
@@ -57,21 +66,21 @@
         p: padding,
     );
     $important: (i, important, '!', '!important');
-    $r-options: ();
-    $remaining: ();
+    $resulted-options: ();
+    $remaining-properties: ();
     @if (type-of($options) == map) {
         @each $name, $value in $options {
             @if ($name == layout and index(map-values($layouts, $value))) {
-                $r-options: map-merge($r-options, (layout: $value));
+                $resulted-options: map-merge($resulted-options, (layout: $value));
             } @else if ($name == auto or $name == important) {
                 @if ($value) {
                     $value: true;
                 } @else {
                     $value: false;
                 }
-                $r-options: map-merge($r-options, ($name: $value));
+                $resulted-options: map-merge($resulted-options, ($name: $value));
             } @else if ($name == property and index(map-values($css-properties), $value)) {
-                $r-options: map-merge($r-options, (property: $value));
+                $resulted-options: map-merge($resulted-options, (property: $value));
             }
         }
     } @else if (type-of($options) == list or type-of($options) == string or type-of($options) == number) {
@@ -79,33 +88,36 @@
             @if (type-of($option) == string) {
                 $option: to-lower-case($option);
                 @if (index($layouts, $option)) {
-                    $r-options: map-merge($r-options, (layout: $option));
+                    $resulted-options: map-merge($resulted-options, (layout: $option));
                 } @else if (index($css-properties, $option)) {
-                    $r-options: map-merge($r-options, (property: $option));
+                    $resulted-options: map-merge($resulted-options, (property: $option));
                 } @else if (index($important, $option)) {
-                    $r-options: map-merge($r-options, (important: true));
+                    $resulted-options: map-merge($resulted-options, (important: true));
                 } @else if ($option == auto) {
-                    $r-options: map-merge($r-options, (auto: true));
+                    $resulted-options: map-merge($resulted-options, (auto: true));
                 } @else {
                     @for $i from 1 through str-length($option) {
                         $char: str-slice($option, $i, $i);
                         @if (map-has-key($layouts, $char)) {
-                            $r-options: map-merge($r-options, (layout: map-get($layouts, $char)));
+                            $resulted-options: map-merge($resulted-options, (layout: map-get($layouts, $char)));
                         } @else if (map-has-key($css-properties, $char)) {
-                            $r-options: map-merge($r-options, (property: map-get($css-properties, $char)));
+                            $resulted-options: map-merge($resulted-options, (property: map-get($css-properties, $char)));
                         } @else if (index($important, $char)) {
-                            $r-options: map-merge($r-options, (important: true));
+                            $resulted-options: map-merge($resulted-options, (important: true));
                         } @else if ($char == 'a') {
-                            $r-options: map-merge($r-options, (auto: true));
+                            $resulted-options: map-merge($resulted-options, (auto: true));
                         }
                     }
                 }
             } @else {
-                $remaining: append($remaining, v($option));
+                $remaining-properties: append($remaining-properties, v($option));
             }
         }
     }
-    @return (properties: $remaining, options: $r-options);
+
+    $result: (properties: $remaining-properties, options: $resulted-options);
+    $offset-cache-options-normalizer: map-merge($offset-cache-options-normalizer, ($cache-key: $result)) !global;
+    @return $result;
 }
 
 // Offset options parser handler. Part of offset properties parser handlers set
@@ -115,6 +127,11 @@
 // @return map
 // @internal
 @function offset-property-parser-options-handler($properties, $options) {
+    $cache-key: join($properties, $options);
+    @if (map-has-key($offset-cache-options-handler, $cache-key)) {
+        @return map-get($offset-cache-options-handler, $cache-key);
+    }
+
     $default-options: (
         layout: null,
         auto: false,
@@ -123,37 +140,40 @@
     );
     $parsed-properties: offset-normalize-options($properties);
     $parsed-options: offset-normalize-options($options);
-    $r-properties: ();
+    $resulted-properties: ();
     $p: null;
     @if (map-has-key($parsed-properties, properties)) {
         $p: map-get($parsed-properties, properties);
         @if (type-of($p) == list and length($p)) {
-            $r-properties: join($r-properties, $p);
+            $resulted-properties: join($resulted-properties, $p);
         }
     }
     $p: null;
     @if (map-has-key($parsed-options, properties)) {
         $p: map-get($parsed-options, properties);
         @if (type-of($p) == list and length($p)) {
-            $r-properties: join($r-properties, $p);
+            $resulted-properties: join($resulted-properties, $p);
         }
     }
-    $r-options: $default-options;
+    $resulted-options: $default-options;
     $p: null;
     @if (map-has-key($parsed-properties, options)) {
         $p: map-get($parsed-properties, options);
         @if (type-of($p) == map and length($p)) {
-            $r-options: map-merge($r-options, $p);
+            $resulted-options: map-merge($resulted-options, $p);
         }
     }
     $p: null;
     @if (map-has-key($parsed-options, options)) {
         $p: map-get($parsed-options, options);
         @if (type-of($p) == map and length($p)) {
-            $r-options: map-merge($r-options, $p);
+            $resulted-options: map-merge($resulted-options, $p);
         }
     }
-    @return (properties: $r-properties, options: $r-options);
+
+    $result: (properties: $resulted-properties, options: $resulted-options);
+    $offset-cache-options-handler: map-merge($offset-cache-options-handler, ($cache-key: $result)) !global;
+    @return $result;
 }
 
 // Offset options parser handler. Part of offset properties parser handlers set
@@ -163,6 +183,11 @@
 // @return map
 // @internal
 @function offset-property-parser-values-handler($properties, $options) {
+    $cache-key: join($properties, $options);
+    @if (map-has-key($offset-cache-values-handler, $cache-key)) {
+        @return map-get($offset-cache-values-handler, $cache-key);
+    }
+
     $layout: map-get($options, layout);
     $auto: map-get($options, auto);
     $important: map-get($options, important);
@@ -209,7 +234,10 @@
     } @else {
         $result: map-merge($result, (#{$property}: append($properties, $important)));
     }
-    @return (properties: $result);
+
+    $result: (properties: $result);
+    $offset-cache-values-handler: map-merge($offset-cache-values-handler, ($cache-key: $result)) !global;
+    @return $result;
 }
 
 // Offset options parser handler. Part of offset properties parser handlers set
