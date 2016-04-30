@@ -1,0 +1,417 @@
+$font-icons: () !default;
+$font-icons-config: (
+    font-name: icons,
+    prefix: 'icon-',
+    size: null,
+    offset: 0.2em,
+    align: (
+        from: -5,
+        to: 5,
+        step: 5%,
+    ),
+) !default;
+
+%font-icon {
+    position: relative;
+    margin-left: 1em;
+    padding-left: map-get($font-icons-config, offset);
+    margin-right: 0;
+    &:before {
+        font-family: map-get($font-icons-config, font-name);
+        @if (map-get($font-icons-config, size) != null) {
+            font-size: map-get($font-icons-config, size);
+        }
+        font-style: normal;
+        font-weight: normal;
+        line-height: 1.0;
+
+        text-decoration: none;
+        text-align: center;
+
+        font-variant: normal;
+        text-transform: none;
+
+        -webkit-font-smoothing: antialiased;
+        //noinspection CssUnknownProperty
+        -moz-osx-font-smoothing: grayscale;
+
+        display: inline-block;
+        position: absolute;
+        margin: 0;
+        padding: 0;
+        top: 50%;
+        left: -1em;
+        right: auto;
+        bottom: auto;
+        transform: translateY(-50%);
+    }
+}
+
+%font-icon-position-after {
+    margin-left: 0;
+    margin-right: 1em;
+    padding-right: map-get($font-icons-config, offset);
+    &:before {
+        left: auto;
+        right: -1em;
+    }
+}
+
+%font-icon-standalone {
+    display: inline-block;
+    padding-left: 0;
+    padding-right: 0;
+    height: 1em;
+}
+
+// Get font icon code by its name
+// 
+// @param string $icon  Font icon name
+// @return string
+@function font-icon($icon) {
+    @if (map-has-key($font-icons, $icon)) {
+        @return unicode(map-get($font-icons, $icon));
+    } @else {
+        @warn 'Unknown font icon "#{$icon}"';
+        @return null;
+    }
+}
+
+// Parse given font icon string into set of font icon properties and their values
+//
+// @param list $icon        Font icon information to parse
+// @param map $options      Additional options to pass to property parsers
+// @return map
+// noinspection SassScssResolvedByNameOnly
+@function parse-font-icon($icon, $options: null) {
+    @if (type-of($icon) == map) {
+        // Treat map argument as "already parsed properties"
+        @return $icon;
+    }
+    $parser-id: scss-snippets-font-icon;
+    @if (not properties-parser-is-registered($parser-id)) {
+        $p: register-properties-parser($parser-id, (
+            prepare: (
+                font-icons-property-parser-prepare-options,
+            ),
+            parse: (
+                font-icons-property-parser-icon-name,
+                font-icons-property-parser-color,
+                font-icons-property-parser-align,
+                font-icons-property-parser-offset,
+                font-icons-property-parser-position,
+                font-icons-property-parser-standalone,
+                font-icons-property-parser-only-content,
+            ),
+        ));
+    }
+    @if (type-of($options) != map) {
+        $options: ();
+    }
+    @return parse-properties($parser-id, $icon, $options);
+}
+
+// Create font icon by given parameters
+// 
+// @param list $icon    Font icon parameters list 
+@mixin font-icon($icon) {
+    $options: map-merge((
+        icon-name: null,
+        color: null,
+        align: null,
+        offset: null,
+        position: before,
+        standalone: false,
+        only-content: false,
+    ), parse-font-icon($icon));
+
+    @if (not map-get($options, only-content)) {
+        @extend %font-icon;
+        $offset: map-get($options, offset);
+        @if (map-get($options, position) == before) {
+            @if ($offset != null) {
+                @if ($offset >= 0) {
+                    padding-left: $offset;
+                } @else {
+                    padding-left: 0;
+                    margin-left: 1em + $offset;
+                    &:before {
+                        left: -1em - $offset;
+                    }
+                }
+            }
+        } @else {
+            @extend %font-icon-position-after;
+            @if ($offset != null) {
+                @if ($offset >= 0) {
+                    padding-right: $offset;
+                } @else {
+                    padding-right: 0;
+                    margin-right: 1em + $offset;
+                    &:before {
+                        right: -1em - $offset;
+                    }
+                }
+            }
+        }
+        @if (map-get($options, standalone)) {
+            @extend %font-icon-standalone;
+        }
+    }
+    &:before {
+        content: font-icon(map-get($options, icon-name));
+        @if (not map-get($options, only-content)) {
+            @if (map-get($options, align) != null) {
+                top: map-get($options, align);
+            }
+        }
+        @if (map-get($options, color) != null) {
+            color: map-get($options, color);
+        }
+    }
+}
+
+// Initialize font icons module
+// 
+// @param map $config               Font icons configuration, @see $font-icons-config
+// @param list|boolean $register    List of font icons to register as separate CSS classes or true to register all icons
+// @param list|map|boolean $align   true to register CSS classes for icons alignment adjusting, list or map to customize alignment parameters
+@mixin font-icons-init($config: null, $register: null, $align: null) {
+    $font-icons-config: map-merge($font-icons-config, $config) !global;
+    @if ($register == true) {
+        $register: map-keys($font-icons);
+    }
+    @if (type-of($register) != null) {
+        $prefix: map-get($font-icons-config, prefix);
+        [class^="#{$prefix}"], [class*=" #{$prefix}"] {
+            @extend %font-icon;
+            &.position-after {
+                @extend %font-icon-position-after;
+            }
+            &.standalone {
+                @extend %font-icon-standalone;
+            }
+            @if ($align != false) {
+                $from: -5;
+                $to: 5;
+                $step: 5%;
+                @if ($align == true) {
+                    $align: map-get($font-icons-config, align);
+                }
+                @if (type-of($align) == list) {
+                    $t: ();
+                    @if (length($align) > 0) {
+                        $t: map-merge($t: (from: nth($align, 1)));
+                    }
+                    @if (length($align) > 1) {
+                        $t: map-merge($t: (to: nth($align, 2)));
+                    }
+                    @if (length($align) > 2) {
+                        $t: map-merge($t: (step: nth($align, 3)));
+                    }
+                    $align: $t;
+                }
+                @if (type-of($align) == map) {
+                    @if (map-has-key($align, from) and type-of(map-get($align, from)) == number and unitless(map-get($align, from))) {
+                        $from: map-get($align, from);
+                    }
+                    @if (map-has-key($align, to) and type-of(map-get($align, to)) == number and unitless(map-get($align, to))) {
+                        $to: map-get($align, to);
+                    }
+                    @if (map-has-key($align, step) and type-of(map-get($align, step)) == number and unit(map-get($align, step)) == '%') {
+                        $step: map-get($align, step);
+                    }
+                }
+                @for $v from $from through $to {
+                    $ap: '';
+                    @if ($v < 0) {
+                        $ap: 'm';
+                    }
+                    &.align-#{$ap}#{abs($v)} {
+                        &:before {
+                            top: 50% + $v * $step;
+                        }
+                    }
+                }
+            }
+        }
+        @each $icon, $code in $font-icons {
+            @if (index($register, $icon)) {
+                .#{$prefix}#{$icon} {
+                    &:before {
+                        content: unicode($code);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Font icons properties parser handler
+// 
+// @param list $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-icons-property-parser-prepare-options($properties, $options) {
+    $resulted-properties: ();
+    $result: ();
+    $set-as: null;
+    @each $property in $properties {
+        @if (index(o offset, $property) != null) {
+            $set-as: offset;
+        } @else if (index(a align, $property) != null) {
+            $set-as: align;
+        } @else if ($set-as != null) {
+            $r: null;
+            @if ($set-as == offset) {
+                //noinspection CssInvalidFunction
+                $r: font-icons-property-parser-offset($property, map-merge($result, (align: true)), $options);
+            } @else if ($set-as == align) {
+                //noinspection CssInvalidFunction
+                $r: font-icons-property-parser-align($property, $result, $options);
+            }
+            @if ($r != null) {
+                $result: map-merge($result, $r);
+            }
+            $set-as: null;
+        } @else {
+            $resulted-properties: append($resulted-properties, $property);
+        }
+    }
+    @return (properties: $resulted-properties, result: $result);
+}
+
+// Font icons properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-icons-property-parser-icon-name($value, $properties, $options) {
+    @if (map-has-key($properties, icon-name)) {
+        @return null;
+    }
+    @if (map-has-key($font-icons, $value)) {
+        @return (icon-name: $value);
+    }
+    @return null;
+}
+
+// Font icons properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-icons-property-parser-color($value, $properties, $options) {
+    @if (map-has-key($properties, color)) {
+        @return null;
+    }
+    @if (type-of($value) == color) {
+        @return (color: $value);
+    }
+    @return null;
+}
+
+// Font icons properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-icons-property-parser-align($value, $properties, $options) {
+    @if (map-has-key($properties, align)) {
+        @return null;
+    }
+    @if (type-of($value) != number) {
+        @return null;
+    }
+    $align: map-get($font-icons-config, align);
+    @if (unitless($value)) {
+        @return (align: 50% + $value * map-get($align, step));
+    } @else if (unit($value) == '%') {
+        @return (align: 50% + $value);
+    }
+    @return null;
+}
+
+// Font icons properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-icons-property-parser-offset($value, $properties, $options) {
+    @if (map-has-key($properties, offset)) {
+        @return null;
+    }
+    @if (type-of($value) != number) {
+        @return null;
+    }
+    @if (unit($value) == em) {
+        @return (offset: $value);
+    } @else if (unitless($value) and map-has-key($properties, align)) {
+        @return (offset: $value * 1em);
+    } @else if ($value < 0 and unit($value) != em) {
+        @warn 'Negative offsets for font icons should be defined in em';
+    }
+    @return null;
+}
+
+// Font icons properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-icons-property-parser-position($value, $properties, $options) {
+    @if (map-has-key($properties, position)) {
+        @return null;
+    }
+    @if (index(left l before b, $value)) {
+        @return (position: before);
+    } @else if (index(right r after a, $value)) {
+        @return (position: after);
+    }
+    @return null;
+}
+
+// Font icons properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-icons-property-parser-standalone($value, $properties, $options) {
+    @if (map-has-key($properties, standalone)) {
+        @return null;
+    }
+    @if (index(standalone s, $value)) {
+        @return (standalone: true);
+    }
+    @return null;
+}
+
+// Font icons properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-icons-property-parser-only-content($value, $properties, $options) {
+    @if (map-has-key($properties, only-content)) {
+        @return null;
+    }
+    @if (index(only-content content c, $value)) {
+        @return (only-content: true);
+    }
+    @return null;
+}
