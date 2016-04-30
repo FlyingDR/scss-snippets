@@ -10,10 +10,15 @@ $offset-cache-values-handler: () !default;
 @function parse-offset($offset, $options: null) {
     $parser-id: scss-snippets-offset;
     @if (not properties-parser-is-registered($parser-id)) {
-        $p: register-properties-parser($parser-id);
-        $p: properties-parser-add-handler($parser-id, offset-property-parser-options-handler, prepare);
-        $p: properties-parser-add-handler($parser-id, offset-property-parser-values-handler, prepare);
-        $p: properties-parser-add-handler($parser-id, offset-property-parser-values-renderer, parse);
+        $p: register-properties-parser($parser-id, (
+            prepare: (
+                offset-property-parser-options-handler,
+                offset-property-parser-values-handler,
+            ),
+            parse: (
+                offset-property-parser-values-renderer,
+            ),
+        ));
     }
     @return parse-properties($parser-id, $offset, $options);
 }

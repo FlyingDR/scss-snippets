@@ -18,13 +18,26 @@ $properties-parser-registered-handlers: () !default;
 // Register new properties parser
 // 
 // @param string $parser-id     Properties parser id
+// @param map $parser-handlers  Parser handlers to register
 // @return map                  Newly registered parser
-@function register-properties-parser($parser-id) {
+@function register-properties-parser($parser-id, $parser-handlers: null) {
     @if (properties-parser-is-registered($parser-id)) {
         @error 'Properties parser with given id "#{$parser-id}" is already registered';
     }
     $parser: (prepare:(), parse: (), normalize: ());
     $properties-parser-registered-handlers: map-merge($properties-parser-registered-handlers, ($parser-id: $parser)) !global;
+    @if (type-of($parser-handlers) == map) {
+        @each $type, $handlers in $parser-handlers {
+            @if (index((prepare, parse, normalize), $type)) {
+                @each $handler in $handlers {
+                    //noinspection CssInvalidFunction
+                    $p: properties-parser-add-handler($parser-id, $handler, $type);
+                }
+            } @else {
+                @warn 'Invalid properties parser handler type: #{$type}';
+            }
+        }
+    }
     @return $parser;
 }
 

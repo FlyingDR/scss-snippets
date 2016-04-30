@@ -14,26 +14,6 @@ $font-default-properties: (
     font-style: normal,
 ) !default;
 $font-url-prefix: '' !default;
-$font-parser-id: scss-snippets-fonts !default;
-$font-parser-handlers: (
-    prepare: (),
-    parse: (
-        font-property-parser-font-family,
-        font-property-parser-font-size,
-        font-property-parser-font-weight,
-        font-property-parser-font-style,
-        font-property-parser-color,
-        font-property-parser-line-height,
-        font-property-parser-line-height,
-        font-property-parser-letter-spacing,
-        font-property-parser-white-space,
-        font-property-parser-text-transform,
-    ),
-    normalize: (
-        font-property-normalizer-line-height,
-        font-property-normalizer-important,
-    ),
-) !default;
 
 @function font-property-parser-font-family($value, $properties, $options) {
     @if (map-has-key($properties, font-family)) {
@@ -203,18 +183,32 @@ $font-parser-handlers: (
         // Treat map argument as "already parsed font properties"
         @return $font;
     }
-    @if (type-of($font-parser-handlers) == map) {
-        @each $type, $handlers in $font-parser-handlers {
-            @each $handler in $handlers {
-                $p: properties-parser-add-handler($font-parser-id, $handler, $type);
-            }
-        }
-        $font-parser-handlers: null !global;
+    $parser-id: scss-snippets-fonts;
+    @if (not properties-parser-is-registered($parser-id)) {
+        $p: register-properties-parser($parser-id, (
+            prepare: (),
+            parse: (
+                font-property-parser-font-family,
+                font-property-parser-font-size,
+                font-property-parser-font-weight,
+                font-property-parser-font-style,
+                font-property-parser-color,
+                font-property-parser-line-height,
+                font-property-parser-line-height,
+                font-property-parser-letter-spacing,
+                font-property-parser-white-space,
+                font-property-parser-text-transform,
+            ),
+            normalize: (
+                font-property-normalizer-line-height,
+                font-property-normalizer-important,
+            ),
+        ));
     }
     @if (type-of($options) != map) {
         $options: ();
     }
-    @return parse-properties($font-parser-id, $font, $options);
+    @return parse-properties($parser-id, $font, $options);
 }
 
 // Generate font CSS properties from given font string
