@@ -61,7 +61,11 @@ $font-icons-config: (
     display: inline-block;
     padding-left: 0;
     padding-right: 0;
+    width: 0;
     height: 1em;
+    text-indent: 100%;
+    text-overflow: clip;
+    white-space: nowrap;
 }
 
 // Get font icon code by its name
@@ -97,11 +101,15 @@ $font-icons-config: (
             parse: (
                 font-icons-property-parser-icon-name,
                 font-icons-property-parser-color,
-                font-icons-property-parser-align,
-                font-icons-property-parser-offset,
-                font-icons-property-parser-position,
                 font-icons-property-parser-standalone,
                 font-icons-property-parser-only-content,
+                font-icons-property-parser-align,
+                font-icons-property-parser-offset,
+                font-icons-property-parser-size,
+                font-icons-property-parser-position,
+            ),
+            normalize: (
+                font-icons-property-parser-normalize-options,
             ),
         ));
     }
@@ -120,47 +128,76 @@ $font-icons-config: (
         color: null,
         align: null,
         offset: null,
+        size: null,
         position: before,
         standalone: false,
         only-content: false,
     ), parse-font-icon($icon));
 
+    $size: map-get($options, size);
     @if (not map-get($options, only-content)) {
         @extend %font-icon;
-        $offset: map-get($options, offset);
-        @if (map-get($options, position) == before) {
-            @if ($offset != null) {
-                @if ($offset >= 0) {
-                    padding-left: $offset;
-                } @else {
-                    padding-left: 0;
-                    margin-left: 1em + $offset;
-                    &:before {
-                        left: -1em - $offset;
-                    }
-                }
-            }
-        } @else {
-            @extend %font-icon-position-after;
-            @if ($offset != null) {
-                @if ($offset >= 0) {
-                    padding-right: $offset;
-                } @else {
-                    padding-right: 0;
-                    margin-right: 1em + $offset;
-                    &:before {
-                        right: -1em - $offset;
-                    }
-                }
-            }
-        }
         @if (map-get($options, standalone)) {
             @extend %font-icon-standalone;
+            @if ($size != null) {
+                font-size: $size;
+                margin-left: 1em;
+            }
+        } @else {
+            $position: map-get($options, position);
+            @if ($position == after) {
+                @extend %font-icon-position-after;
+            }
+            $offset: map-get($options, offset);
+            @if ($offset != null or $size != null) {
+                $o: $offset;
+                @if ($offset == null) {
+                    $o: map-get($font-icons-config, offset);
+                }
+                $sz: $size;
+                @if ($size == null) {
+                    $sz: 1em;
+                }
+                @if ($position == before) {
+                    @if ($o >= 0) {
+                        @if ($offset != null) {
+                            padding-left: $o;
+                        }
+                        @if ($size != null) {
+                            margin-left: $sz;
+                        }
+                    } @else {
+                        padding-left: 0;
+                        margin-left: $sz + $o;
+                        &:before {
+                            left: 0 - $sz - $o;
+                        }
+                    }
+                } @else {
+                    @if ($o >= 0) {
+                        @if ($offset != null) {
+                            padding-right: $o;
+                        }
+                        @if ($size != null) {
+                            margin-right: $sz;
+                        }
+                    } @else {
+                        padding-right: 0;
+                        margin-right: $sz + $o;
+                        &:before {
+                            right: 0 - $sz - $o;
+                        }
+                    }
+                }
+            }
         }
     }
     &:before {
         content: font-icon(map-get($options, icon-name));
         @if (not map-get($options, only-content)) {
+            @if (not map-get($options, standalone) and $size != null) {
+                font-size: $size;
+            }
             @if (map-get($options, align) != null) {
                 top: map-get($options, align);
             }
@@ -262,14 +299,19 @@ $font-icons-config: (
             $set-as: offset;
         } @else if (index(a align, $property) != null) {
             $set-as: align;
+        } @else if (index(sz size, $property) != null) {
+            $set-as: size;
         } @else if ($set-as != null) {
             $r: null;
             @if ($set-as == offset) {
                 //noinspection CssInvalidFunction
-                $r: font-icons-property-parser-offset($property, map-merge($result, (align: true)), $options);
+                $r: font-icons-property-parser-offset($property, map-merge($result, (align: true, size: true)), map-merge($options, (prepare: true)));
             } @else if ($set-as == align) {
                 //noinspection CssInvalidFunction
-                $r: font-icons-property-parser-align($property, $result, $options);
+                $r: font-icons-property-parser-align($property, map-merge($result, (offset: true, size: true)), map-merge($options, (prepare: true)));
+            } @else if ($set-as == size) {
+                //noinspection CssInvalidFunction
+                $r: font-icons-property-parser-size($property, map-merge($result, (align: true, offset: true)), map-merge($options, (prepare: true)));
             }
             @if ($r != null) {
                 $result: map-merge($result, $r);
@@ -357,8 +399,28 @@ $font-icons-config: (
         @return (offset: $value);
     } @else if (unitless($value) and map-has-key($properties, align)) {
         @return (offset: $value * 1em);
-    } @else if ($value < 0 and unit($value) != em) {
-        @warn 'Negative offsets for font icons should be defined in em';
+    }
+    @return null;
+}
+
+// Font icons properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-icons-property-parser-size($value, $properties, $options) {
+    @if (map-has-key($properties, size)) {
+        @return null;
+    }
+    @if (type-of($value) != number) {
+        @return null;
+    }
+    @if (unit($value) == em and (map-has-key($properties, offset) or map-has-key($options, prepare))) {
+        @return (size: $value);
+    } @else if (not unitless($value) and (map-has-key($properties, standalone) or map-has-key($options, prepare))) {
+        @return (size: $value);
     }
     @return null;
 }
@@ -393,7 +455,7 @@ $font-icons-config: (
     @if (map-has-key($properties, standalone)) {
         @return null;
     }
-    @if (index(standalone s, $value)) {
+    @if (index(standalone s st, $value)) {
         @return (standalone: true);
     }
     @return null;
@@ -410,8 +472,32 @@ $font-icons-config: (
     @if (map-has-key($properties, only-content)) {
         @return null;
     }
-    @if (index(only-content content c, $value)) {
+    @if (index(only-content content c cnt, $value)) {
         @return (only-content: true);
     }
     @return null;
+}
+
+// Font icons properties parser handler
+// 
+// @param map $result
+// @param map $options     
+// @return map
+// @internal
+@function font-icons-property-parser-normalize-options($result, $options) {
+    @if (map-has-key($result, offset)) {
+        $value: map-get($result, offset);
+        @if ($value < 0 and unit($value) != em) {
+            @warn 'Negative offsets for font icons should be defined in em';
+            $result: map-remove($result, offset);
+        }
+    }
+    @if (map-has-key($result, size)) {
+        $value: map-get($result, size);
+        @if (not map-has-key($result, standalone) and unit($value) != em) {
+            @warn 'Font icon size for non-standalone icons should be defined in em';
+            $result: map-remove($result, size);
+        }
+    }
+    @return $result;
 }
