@@ -6,23 +6,30 @@ $responsive-susy-current-value: null !default;
 
 // Runner for responsive Susy mixins
 // 
-// @param string $key   Responsive configuration key to take information from
+// @param mixed $key   Either responsive configuration key to take information from or actual information for Suxy mixin 
 @mixin responsive-susy-runner($key) {
-    $default-math: susy-get(math);
-    $default-value: r-get($key);
-    @include r-each(true) {
-        $math: susy-get(math);
-        $value: r-get($key, $default-value);
-        @if ($math == static) {
-            @if ($value != null) {
-                $responsive-susy-current-value: $value !global;
-                @content;
+    @if (r-is-key($key, true)) {
+        $default-math: susy-get(math);
+        $default-value: r-get($key);
+        @include r-each(true) {
+            $math: susy-get(math);
+            $value: r-get($key, $default-value);
+            @if ($math == static) {
+                @if ($value != null) {
+                    $responsive-susy-current-value: $value !global;
+                    @content;
+                }
+            } @else {
+                @if ($value != null and ($value != $default-value or $math != $default-math)) {
+                    $responsive-susy-current-value: $value !global;
+                    @content;
+                }
             }
-        } @else {
-            @if ($value != null and ($value != $default-value or $math != $default-math)) {
-                $responsive-susy-current-value: $value !global;
-                @content;
-            }
+        }
+    } @else if (not r-is-key($key, false)) {
+        @include r-each(true) {
+            $responsive-susy-current-value: $key !global;
+            @content;
         }
     }
 }
