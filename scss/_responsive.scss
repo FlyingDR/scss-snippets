@@ -286,6 +286,9 @@ $responsive-test-key: '---responsive-test-key---' !default;
     @return (r-get($key, $responsive-test-key, $id) != $responsive-test-key);
 }
 
+// Define prefix for responsive configuration keys passed to r-get() / r-has() to simplify code
+// 
+// @param string $prefix
 @mixin r-with($prefix) {
     @if (str-slice($prefix, 1, 1) == '/') {
         $prefix: str-slice($prefix, 2);
@@ -297,6 +300,53 @@ $responsive-test-key: '---responsive-test-key---' !default;
     $responsive-get-key-prefix: $prefix !global;
     @content;
     $responsive-get-key-prefix: $current-prefix !global;
+}
+
+// Check if responsive configuration key prefix is currently used
+// 
+// @return boolean
+@function r-have-key-prefix() {
+    @return $responsive-get-key-prefix != null;
+}
+
+// Get current responsive configuration key prefix 
+// 
+// @return string|null
+@function r-get-key-prefix() {
+    @return $responsive-get-key-prefix;
+}
+
+// Check if given information can be treated as responsive configuration key
+// 
+// @param mixed $key                Information to check as a key
+// @param boolean $only-if-exists   Only treat given information as a key if it is actually available in responsive configuration
+// @return boolean
+@function r-is-key($key, $only-if-exists: false) {
+    @if (type-of($key) != string or $key == '') {
+        @return false;
+    }
+    @if ((not $only-if-exists) and (str-index($key, '/') != null or r-have-key-prefix())) {
+        @return true;
+    }
+    @if ($only-if-exists) {
+        //noinspection CssInvalidFunction
+        @return r-is-exists($key);
+    } @else {
+        @return false;
+    }
+}
+
+// Check if given responsive configuration key is exists at all
+//
+// @param string $key   Responsive configuration key to check
+// @return boolean
+@function r-is-exists($key) {
+    @each $id in r-get-ids() {
+        @if (r-has($key, $id)) {
+            @return true;
+        }
+    }
+    @return false;
 }
 
 // Simplification of iteration over available media queries

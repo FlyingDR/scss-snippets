@@ -228,7 +228,7 @@ $font-url-prefix: '' !default;
 // @param map|list $options         Map of font parsing options or list of font properties that should be marked as important
 //noinspection SassScssResolvedByNameOnly
 @mixin r-font($key, $font: null, $options: null) {
-    @if (type-of($key) != string or (type-of($key) == string and str-index($key, '/') == null and $responsive-get-key-prefix == null)) {
+    @if (not r-is-key($key, false)) {
         @warn 'Responsive key argument skipping is deprecated';
         @if ($options == null and $font != null) {
             $options: $font;
