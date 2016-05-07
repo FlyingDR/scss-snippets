@@ -57,7 +57,7 @@ $offset-cache-values-handler: () !default;
         @return map-get($offset-cache-options-normalizer, $cache-key);
     }
 
-    $option-keys: layout auto important property;
+    $option-keys: layout auto important property group;
     $layouts: (
         t: top,
         b: bottom,
@@ -86,6 +86,8 @@ $offset-cache-values-handler: () !default;
                 $resulted-options: map-merge($resulted-options, ($name: $value));
             } @else if ($name == property and index(map-values($css-properties), $value)) {
                 $resulted-options: map-merge($resulted-options, (property: $value));
+            } @else if (index($option-keys, $name)) {
+                $resulted-options: map-merge($resulted-options, ($name: $value));
             }
         }
     } @else if (type-of($options) == list or type-of($options) == string or type-of($options) == number) {
@@ -141,7 +143,8 @@ $offset-cache-values-handler: () !default;
         layout: null,
         auto: false,
         important: false,
-        property: margin
+        property: margin,
+        group: true,
     );
     $parsed-properties: offset-normalize-options($properties);
     $parsed-options: offset-normalize-options($options);
@@ -195,49 +198,119 @@ $offset-cache-values-handler: () !default;
 
     $layout: map-get($options, layout);
     $auto: map-get($options, auto);
-    $important: map-get($options, important);
     $property: map-get($options, property);
+    $group: map-get($options, group);
     $result: ();
 
-    @if ($important) {
-        $important: unquote('!important');
-    } @else {
-        $important: null;
-    }
     @if (index((top, bottom, left, right), $layout) and length($properties) >= 1) {
-        $result: map-merge($result, (#{$property}-#{$layout}: append(nth($properties, 1), $important)));
+        $result: map-merge($result, (#{$property}-#{$layout}: nth($properties, 1)));
     } @else if (index((vertical, horizontal), $layout) and length($properties) >= 1) {
         $first: nth($properties, 1);
         $second: null;
         @if (length($properties) >= 2) {
             $second: nth($properties, 2);
         }
-        @if ($auto) {
-            @if ($layout == vertical) {
-                @if ($second != null) {
-                    $result: map-merge($result, (#{$property}: append($first auto $second, $important)));
+        @if ($group) {
+            @if ($auto) {
+                @if ($layout == vertical) {
+                    @if ($second != null) {
+                        $result: map-merge($result, (#{$property}: $first auto $second));
+                    } @else {
+                        $result: map-merge($result, (#{$property}: $first auto));
+                    }
                 } @else {
-                    $result: map-merge($result, (#{$property}: append($first auto, $important)));
+                    @if ($second != null) {
+                        $result: map-merge($result, (#{$property}: auto $first auto $second));
+                    } @else {
+                        $result: map-merge($result, (#{$property}: auto $first));
+                    }
                 }
             } @else {
-                @if ($second != null) {
-                    $result: map-merge($result, (#{$property}: append(auto $first auto $second, $important)));
+                @if ($second == null) {
+                    $second: $first;
+                }
+                @if ($layout == vertical) {
+                    $result: map-merge($result, (#{$property}-top: $first, #{$property}-bottom: $second));
                 } @else {
-                    $result: map-merge($result, (#{$property}: append(auto $first, $important)));
+                    $result: map-merge($result, (#{$property}-left: $second, #{$property}-right: $first));
                 }
             }
         } @else {
             @if ($second == null) {
                 $second: $first;
             }
+            $first: $first;
+            $second: $second;
+            $a: auto;
             @if ($layout == vertical) {
-                $result: map-merge($result, (#{$property}-top: append($first, $important), #{$property}-bottom: append($second, $important)));
+                $result: map-merge($result, (
+                    #{$property}-top: $first,
+                    #{$property}-bottom: $second,
+                ));
             } @else {
-                $result: map-merge($result, (#{$property}-left: append($second, $important), #{$property}-right:append($first, $important)));
+                $result: map-merge($result, (
+                    #{$property}-left: $second,
+                    #{$property}-right: $first,
+                ));
+            }
+            @if ($auto) {
+                @if ($layout == vertical) {
+                    $result: map-merge($result, (
+                        #{$property}-right: $a,
+                        #{$property}-left: $a,
+                    ));
+                } @else {
+                    $result: map-merge($result, (
+                        #{$property}-top: $a,
+                        #{$property}-bottom: $a,
+                    ));
+                }
             }
         }
     } @else {
-        $result: map-merge($result, (#{$property}: append($properties, $important)));
+        @if ($group) {
+            $result: map-merge($result, (#{$property}: $properties));
+        } @else {
+            @if (length($properties) == 1) {
+                $v: nth($properties, 1);
+                $result: map-merge($result, (
+                    #{$property}-top: $v,
+                    #{$property}-right: $v,
+                    #{$property}-bottom: $v,
+                    #{$property}-left: $v,
+                ));
+            } @else if (length($properties) == 2) {
+                $y: nth($properties, 1);
+                $x: nth($properties, 2);
+                $result: map-merge($result, (
+                    #{$property}-top: $y,
+                    #{$property}-right: $x,
+                    #{$property}-bottom: $y,
+                    #{$property}-left: $x,
+                ));
+            } @else if (length($properties) == 3) {
+                $t: nth($properties, 1);
+                $rl: nth($properties, 2);
+                $b: nth($properties, 3);
+                $result: map-merge($result, (
+                    #{$property}-top: $t,
+                    #{$property}-right: $rl,
+                    #{$property}-bottom: $b,
+                    #{$property}-left: $rl,
+                ));
+            } @else if (length($properties) >= 4) {
+                $t: nth($properties, 1);
+                $r: nth($properties, 2);
+                $b: nth($properties, 3);
+                $l: nth($properties, 4);
+                $result: map-merge($result, (
+                    #{$property}-top: $t,
+                    #{$property}-right: $r,
+                    #{$property}-bottom: $b,
+                    #{$property}-left: $l,
+                ));
+            }
+        }
     }
 
     $result: (properties: $result);
@@ -253,5 +326,9 @@ $offset-cache-values-handler: () !default;
 // @return map
 // @internal
 @function offset-property-parser-values-renderer($value, $result, $options) {
-    @return (nth($value, 1): nth($value, 2));
+    $v: nth($value, 2);
+    @if (map-get($options, important)) {
+        $v: append($v, unquote('!important'));
+    }
+    @return (nth($value, 1): $v);
 }
