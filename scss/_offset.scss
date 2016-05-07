@@ -92,9 +92,9 @@ $offset-cache-values-handler: () !default;
         @each $option in $options {
             @if (type-of($option) == string) {
                 $option: to-lower-case($option);
-                @if (index($layouts, $option)) {
+                @if (index(map-values($layouts), $option)) {
                     $resulted-options: map-merge($resulted-options, (layout: $option));
-                } @else if (index($css-properties, $option)) {
+                } @else if (index(map-values($css-properties), $option)) {
                     $resulted-options: map-merge($resulted-options, (property: $option));
                 } @else if (index($important, $option)) {
                     $resulted-options: map-merge($resulted-options, (important: true));
