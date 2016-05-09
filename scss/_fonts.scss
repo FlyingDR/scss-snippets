@@ -15,6 +15,13 @@ $font-default-properties: (
 ) !default;
 $font-url-prefix: '' !default;
 
+@function font-property-prepare-options($properties, $options) {
+    @if (type-of($options) == string or type-of($options) == list) {
+        @return (options: (important: $options));
+    }
+    @return null;
+}
+
 @function font-property-parser-font-family($value, $properties, $options) {
     @if (map-has-key($properties, font-family)) {
         @return null;
@@ -186,7 +193,9 @@ $font-url-prefix: '' !default;
     $parser-id: scss-snippets-fonts;
     @if (not properties-parser-is-registered($parser-id)) {
         $p: register-properties-parser($parser-id, (
-            prepare: (),
+            prepare: (
+                font-property-prepare-options,
+            ),
             parse: (
                 font-property-parser-font-family,
                 font-property-parser-font-size,
