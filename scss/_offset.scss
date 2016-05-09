@@ -22,6 +22,7 @@ $offset-properties-parser-id: scss-snippets-offset;
             layout: null,
             auto: false,
             important: false,
+            negative: false,
             property: margin,
             group: true,
         ));
@@ -76,6 +77,7 @@ $offset-properties-parser-id: scss-snippets-offset;
         m: margin,
         p: padding,
     );
+    $negative: (n, negative);
     $important: (i, important, '!', '!important');
     $resulted-options: ();
     $remaining-properties: ();
@@ -83,7 +85,7 @@ $offset-properties-parser-id: scss-snippets-offset;
         @each $name, $value in $options {
             @if ($name == layout and index(map-values($layouts, $value))) {
                 $resulted-options: map-merge($resulted-options, (layout: $value));
-            } @else if ($name == auto or $name == important) {
+            } @else if ($name == auto or $name == important or $name == negative) {
                 @if ($value) {
                     $value: true;
                 } @else {
@@ -106,6 +108,8 @@ $offset-properties-parser-id: scss-snippets-offset;
                     $resulted-options: map-merge($resulted-options, (property: $option));
                 } @else if (index($important, $option)) {
                     $resulted-options: map-merge($resulted-options, (important: true));
+                } @else if (index($negative, $option)) {
+                    $resulted-options: map-merge($resulted-options, (negative: true));
                 } @else if ($option == auto) {
                     $resulted-options: map-merge($resulted-options, (auto: true));
                 } @else {
@@ -117,6 +121,8 @@ $offset-properties-parser-id: scss-snippets-offset;
                             $resulted-options: map-merge($resulted-options, (property: map-get($css-properties, $char)));
                         } @else if (index($important, $char)) {
                             $resulted-options: map-merge($resulted-options, (important: true));
+                        } @else if (index($negative, $char)) {
+                            $resulted-options: map-merge($resulted-options, (negative: true));
                         } @else if ($char == 'a') {
                             $resulted-options: map-merge($resulted-options, (auto: true));
                         }
@@ -325,9 +331,23 @@ $offset-properties-parser-id: scss-snippets-offset;
 // @return map
 // @internal
 @function offset-property-parser-values-renderer($value, $result, $options) {
-    $v: nth($value, 2);
-    @if (map-get($options, important)) {
-        $v: append($v, unquote('!important'));
+    $property: nth($value, 1);
+    $value: nth($value, 2);
+    @if (map-get($options, negative)) {
+        @if (type-of($value) == list) {
+            $r: ();
+            @each $v in $value {
+                @if (type-of($v) == number and $v != 0) {
+                    $v: 0 - $v;
+                }
+                $r: append($r, $v);
+            }
+        } @else if (type-of($value) == number and $value != 0) {
+            $value: 0 - $value;
+        }
     }
-    @return (nth($value, 1): $v);
+    @if (map-get($options, important)) {
+        $value: append($value, unquote('!important'));
+    }
+    @return ($property: $value);
 }
