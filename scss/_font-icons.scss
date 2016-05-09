@@ -111,10 +111,16 @@ $font-icons-config: (
             normalize: (
                 font-icons-property-parser-normalize-options,
             ),
+        ), null, (
+            icon-name: null,
+            color: null,
+            align: null,
+            offset: null,
+            size: null,
+            position: before,
+            standalone: false,
+            only-content: false,
         ));
-    }
-    @if (type-of($options) != map) {
-        $options: ();
     }
     @return parse-properties($parser-id, $icon, $options);
 }
@@ -123,16 +129,7 @@ $font-icons-config: (
 // 
 // @param list $icon    Font icon parameters list 
 @mixin font-icon($icon) {
-    $options: map-merge((
-        icon-name: null,
-        color: null,
-        align: null,
-        offset: null,
-        size: null,
-        position: before,
-        standalone: false,
-        only-content: false,
-    ), parse-font-icon($icon));
+    $options: parse-font-icon($icon);
 
     $size: map-get($options, size);
     @if (not map-get($options, only-content)) {

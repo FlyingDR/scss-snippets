@@ -1,6 +1,7 @@
 $offset-cache-options-normalizer: () !default;
 $offset-cache-options-handler: () !default;
 $offset-cache-values-handler: () !default;
+$offset-properties-parser-id: scss-snippets-offset;
 
 // Parse given offset information 
 // 
@@ -8,9 +9,8 @@ $offset-cache-values-handler: () !default;
 // @param list|map $options     Offset options to use for parsing (will override options given in $offset)
 // @return map
 @function parse-offset($offset, $options: null) {
-    $parser-id: scss-snippets-offset;
-    @if (not properties-parser-is-registered($parser-id)) {
-        $p: register-properties-parser($parser-id, (
+    @if (not properties-parser-is-registered($offset-properties-parser-id)) {
+        $p: register-properties-parser($offset-properties-parser-id, (
             prepare: (
                 offset-property-parser-options-handler,
                 offset-property-parser-values-handler,
@@ -18,9 +18,15 @@ $offset-cache-values-handler: () !default;
             parse: (
                 offset-property-parser-values-renderer,
             ),
+        ), (
+            layout: null,
+            auto: false,
+            important: false,
+            property: margin,
+            group: true,
         ));
     }
-    @return parse-properties($parser-id, $offset, $options);
+    @return parse-properties($offset-properties-parser-id, $offset, $options);
 }
 
 // Generate element offsets based on provided information
@@ -57,7 +63,7 @@ $offset-cache-values-handler: () !default;
         @return map-get($offset-cache-options-normalizer, $cache-key);
     }
 
-    $option-keys: layout auto important property group;
+    $option-keys: map-keys(properties-parser-get-default-options($offset-properties-parser-id));
     $layouts: (
         t: top,
         b: bottom,
@@ -139,13 +145,6 @@ $offset-cache-values-handler: () !default;
         @return map-get($offset-cache-options-handler, $cache-key);
     }
 
-    $default-options: (
-        layout: null,
-        auto: false,
-        important: false,
-        property: margin,
-        group: true,
-    );
     $parsed-properties: offset-normalize-options($properties);
     $parsed-options: offset-normalize-options($options);
     $resulted-properties: ();
@@ -163,7 +162,7 @@ $offset-cache-values-handler: () !default;
             $resulted-properties: join($resulted-properties, $p);
         }
     }
-    $resulted-options: $default-options;
+    $resulted-options: properties-parser-get-default-options($offset-properties-parser-id);
     $p: null;
     @if (map-has-key($parsed-properties, options)) {
         $p: map-get($parsed-properties, options);

@@ -41,7 +41,7 @@ $font-url-prefix: '' !default;
     $is-responsive: function-exists(is-responsive) and is-responsive();
     $r-size-exists: false;
     $r-fs-key: 'font-sizes/' + $value;
-    $resolve: not map-has-key($options, skip-font-size-resolve);
+    $resolve: not map-get($options, skip-font-size-resolve);
     @if ($is-responsive and not $resolve) {
         @each $id in r-get-ids() {
             @if (not $r-size-exists) {
@@ -212,10 +212,10 @@ $font-url-prefix: '' !default;
                 font-property-normalizer-line-height,
                 font-property-normalizer-important,
             ),
+        ), (
+            skip-font-size-resolve: false,
+            important: null,
         ));
-    }
-    @if (type-of($options) != map) {
-        $options: ();
     }
     @return parse-properties($parser-id, $font, $options);
 }
