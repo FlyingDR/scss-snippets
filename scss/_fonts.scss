@@ -60,7 +60,7 @@ $font-url-prefix: '' !default;
         $result: $value;
     } @else if (map-has-key($font-sizes, $value)) {
         $result: map-get($font-sizes, $value);
-    } @else if ((type-of($value) == number) and index($font-size-units, unit($value))) {
+    } @else if ((type-of($value) == number) and index($font-size-units, unit($value)) and not ((unit($value) == em) and (abs($value) <= map-get($options, max-letter-spacing)))) {
         $result: $value;
     }
     @if ($result == null) {
@@ -111,7 +111,7 @@ $font-url-prefix: '' !default;
     @if (map-has-key($properties, line-height)) {
         @return null;
     }
-    @if ((type-of($value) == number) and not ((unit($value) == em) and (abs($value) <= 0.5))) {
+    @if ((type-of($value) == number) and not ((unit($value) == em) and (abs($value) <= map-get($options, max-letter-spacing)))) {
         @return (line-height: $value);
     } @else if (type-of($value) == '' and str-index('' + $value, '/') != null) {
         $value: unquote('' + $value);
@@ -215,6 +215,7 @@ $font-url-prefix: '' !default;
         ), (
             skip-font-size-resolve: false,
             important: null,
+            max-letter-spacing: 0.5,
         ));
     }
     @return parse-properties($parser-id, $font, $options);
