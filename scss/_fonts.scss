@@ -15,170 +15,6 @@ $font-default-properties: (
 ) !default;
 $font-url-prefix: '' !default;
 
-@function font-property-prepare-options($properties, $options) {
-    @if (type-of($options) == string or type-of($options) == list) {
-        @return (options: (important: $options));
-    }
-    @return null;
-}
-
-@function font-property-parser-font-family($value, $properties, $options) {
-    @if (map-has-key($properties, font-family)) {
-        @return null;
-    }
-    @if (map-has-key($font-families, $value)) {
-        @return (font-family: join(map-get($font-families, $value), (), comma));
-    }
-    @return null;
-}
-
-@function font-property-parser-font-size($value, $properties, $options) {
-    @if (map-has-key($properties, font-size)) {
-        @return null;
-    }
-    $named-font-sizes: xx-small, x-small, small, medium, large, x-large, xx-large, larger, smaller;
-    $font-size-units: px, em, rem, vw, vh, vmin, vmax;
-    $is-responsive: function-exists(is-responsive) and is-responsive();
-    $r-size-exists: false;
-    $r-fs-key: 'font-sizes/' + $value;
-    $resolve: not map-get($options, skip-font-size-resolve);
-    @if ($is-responsive and not $resolve) {
-        @each $id in r-get-ids() {
-            @if (not $r-size-exists) {
-                @if (r-has($r-fs-key, $id)) {
-                    $r-size-exists: true;
-                }
-            }
-        }
-    }
-    $result: null;
-    @if ($is-responsive and $resolve and r-has($r-fs-key)) {
-        $result: r-get($r-fs-key);
-    } @else if ($is-responsive and $r-size-exists) {
-        $result: $value;
-    } @else if (index($named-font-sizes, $value)) {
-        $result: $value;
-    } @else if (map-has-key($font-sizes, $value)) {
-        $result: map-get($font-sizes, $value);
-    } @else if ((type-of($value) == number) and index($font-size-units, unit($value)) and not ((unit($value) == em) and (abs($value) <= map-get($options, max-letter-spacing)))) {
-        $result: $value;
-    }
-    @if ($result == null) {
-        @return null;
-    }
-    @if (type-of($result) == number and index(px rem, unit($result))) {
-        $result: v($result);
-    }
-    @if (not $resolve) {
-        $resolve: $value;
-    }
-    @return (font-size: $result);
-}
-
-@function font-property-parser-font-weight($value, $properties, $options) {
-    @if (map-has-key($properties, font-weight)) {
-        @return null;
-    }
-    $weights: normal, bold, bolder, lighter, 100, 200, 300, 400, 500, 600, 700, 800, 900;
-    @if (index($weights, $value)) {
-        @return (font-weight: $value);
-    }
-    @return null;
-}
-
-@function font-property-parser-font-style($value, $properties, $options) {
-    @if (map-has-key($properties, font-style)) {
-        @return null;
-    }
-    $styles: normal, italic, oblique;
-    @if (index($styles, $value)) {
-        @return (font-style: $value);
-    }
-    @return null;
-}
-
-@function font-property-parser-color($value, $properties, $options) {
-    @if (map-has-key($properties, color)) {
-        @return null;
-    }
-    @if (type-of($value) == color) {
-        @return (color: $value);
-    }
-    @return null;
-}
-
-@function font-property-parser-line-height($value, $properties, $options) {
-    @if (map-has-key($properties, line-height)) {
-        @return null;
-    }
-    @if ((type-of($value) == number) and not ((unit($value) == em) and (abs($value) <= map-get($options, max-letter-spacing)))) {
-        @return (line-height: $value);
-    } @else if (type-of($value) == '' and str-index('' + $value, '/') != null) {
-        $value: unquote('' + $value);
-        $a: to-number(str-slice($value, 1, str-index($value, '/') - 1));
-        $b: to-number(str-slice($value, str-index($value, '/') + 1));
-        @return (line-height: $a / $b);
-    }
-    @return null;
-}
-
-@function font-property-parser-letter-spacing($value, $properties, $options) {
-    @if (map-has-key($properties, letter-spacing)) {
-        @return null;
-    }
-    $letter-spacing-units: px, em, rem;
-    @if (type-of($value) == number and index($letter-spacing-units, unit($value))) {
-        @return (letter-spacing: $value);
-    }
-    @return null;
-}
-
-@function font-property-parser-white-space($value, $properties, $options) {
-    @if (map-has-key($properties, white-space)) {
-        @return null;
-    }
-    $whitespace: normal, pre, nowrap, pre-wrap, pre-line;
-    @if (index($whitespace, $value)) {
-        @return (white-space: $value);
-    }
-    @return null;
-}
-
-@function font-property-parser-text-transform($value, $properties, $options) {
-    @if (map-has-key($properties, text-transform)) {
-        @return null;
-    }
-    $transform: none, capitalize, uppercase, lowercase, full-width;
-    @if (index($transform, $value)) {
-        @return (text-transform: $value);
-    }
-    @return null;
-}
-
-@function font-property-normalizer-line-height($properties, $options) {
-    @if (map-has-key($properties, font-size) and map-has-key($properties, line-height)) {
-        $fs: map-get($properties, font-size);
-        $lh: map-get($properties, line-height);
-        @if ((type-of($fs) == number) and (type-of($lh) == number) and (unit($fs) == unit($lh))) {
-            $properties: map-merge($properties, (line-height: strip-units($lh / $fs)));
-        }
-    }
-    @return $properties;
-}
-
-@function font-property-normalizer-important($properties, $options) {
-    @if (not map-has-key($options, important)) {
-        @return $properties;
-    }
-    $important: map-get($options, important);
-    @each $prop, $value in $properties {
-        @if (index($important, $prop) != null) {
-            $properties: map-merge($properties, ($prop: $value !important));
-        }
-    }
-    @return $properties;
-}
-
 // Parse given font string into set of CSS properties and their values
 //
 // @param list $font        Font values list to parse
@@ -414,4 +250,249 @@ $font-url-prefix: '' !default;
             }
         }
     }
+}
+
+// Font properties parser handler
+// 
+// @param list $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-property-prepare-options($properties, $options) {
+    @if (type-of($options) == string or type-of($options) == list) {
+        @return (options: (important: $options));
+    }
+    @return null;
+}
+
+// Font properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-property-parser-font-family($value, $properties, $options) {
+    @if (map-has-key($properties, font-family)) {
+        @return null;
+    }
+    @if (map-has-key($font-families, $value)) {
+        @return (font-family: join(map-get($font-families, $value), (), comma));
+    }
+    @return null;
+}
+
+// Font properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-property-parser-font-size($value, $properties, $options) {
+    @if (map-has-key($properties, font-size)) {
+        @return null;
+    }
+    $named-font-sizes: xx-small, x-small, small, medium, large, x-large, xx-large, larger, smaller;
+    $font-size-units: px, em, rem, vw, vh, vmin, vmax;
+    $is-responsive: function-exists(is-responsive) and is-responsive();
+    $r-size-exists: false;
+    $r-fs-key: 'font-sizes/' + $value;
+    $resolve: not map-get($options, skip-font-size-resolve);
+    @if ($is-responsive and not $resolve) {
+        @each $id in r-get-ids() {
+            @if (not $r-size-exists) {
+                @if (r-has($r-fs-key, $id)) {
+                    $r-size-exists: true;
+                }
+            }
+        }
+    }
+    $result: null;
+    @if ($is-responsive and $resolve and r-has($r-fs-key)) {
+        $result: r-get($r-fs-key);
+    } @else if ($is-responsive and $r-size-exists) {
+        $result: $value;
+    } @else if (index($named-font-sizes, $value)) {
+        $result: $value;
+    } @else if (map-has-key($font-sizes, $value)) {
+        $result: map-get($font-sizes, $value);
+    } @else if ((type-of($value) == number) and index($font-size-units, unit($value)) and not ((unit($value) == em) and (abs($value) <= map-get($options, max-letter-spacing)))) {
+        $result: $value;
+    }
+    @if ($result == null) {
+        @return null;
+    }
+    @if (type-of($result) == number and index(px rem, unit($result))) {
+        $result: v($result);
+    }
+    @if (not $resolve) {
+        $resolve: $value;
+    }
+    @return (font-size: $result);
+}
+
+// Font properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-property-parser-font-weight($value, $properties, $options) {
+    @if (map-has-key($properties, font-weight)) {
+        @return null;
+    }
+    $weights: normal, bold, bolder, lighter, 100, 200, 300, 400, 500, 600, 700, 800, 900;
+    @if (index($weights, $value)) {
+        @return (font-weight: $value);
+    }
+    @return null;
+}
+
+// Font properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-property-parser-font-style($value, $properties, $options) {
+    @if (map-has-key($properties, font-style)) {
+        @return null;
+    }
+    $styles: normal, italic, oblique;
+    @if (index($styles, $value)) {
+        @return (font-style: $value);
+    }
+    @return null;
+}
+
+// Font properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-property-parser-color($value, $properties, $options) {
+    @if (map-has-key($properties, color)) {
+        @return null;
+    }
+    @if (type-of($value) == color) {
+        @return (color: $value);
+    }
+    @return null;
+}
+
+// Font properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-property-parser-line-height($value, $properties, $options) {
+    @if (map-has-key($properties, line-height)) {
+        @return null;
+    }
+    @if ((type-of($value) == number) and not ((unit($value) == em) and (abs($value) <= map-get($options, max-letter-spacing)))) {
+        @return (line-height: $value);
+    } @else if (type-of($value) == '' and str-index('' + $value, '/') != null) {
+        $value: unquote('' + $value);
+        $a: to-number(str-slice($value, 1, str-index($value, '/') - 1));
+        $b: to-number(str-slice($value, str-index($value, '/') + 1));
+        @return (line-height: $a / $b);
+    }
+    @return null;
+}
+
+// Font properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-property-parser-letter-spacing($value, $properties, $options) {
+    @if (map-has-key($properties, letter-spacing)) {
+        @return null;
+    }
+    $letter-spacing-units: px, em, rem;
+    @if (type-of($value) == number and index($letter-spacing-units, unit($value))) {
+        @return (letter-spacing: $value);
+    }
+    @return null;
+}
+
+// Font properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-property-parser-white-space($value, $properties, $options) {
+    @if (map-has-key($properties, white-space)) {
+        @return null;
+    }
+    $whitespace: normal, pre, nowrap, pre-wrap, pre-line;
+    @if (index($whitespace, $value)) {
+        @return (white-space: $value);
+    }
+    @return null;
+}
+
+// Font properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function font-property-parser-text-transform($value, $properties, $options) {
+    @if (map-has-key($properties, text-transform)) {
+        @return null;
+    }
+    $transform: none, capitalize, uppercase, lowercase, full-width;
+    @if (index($transform, $value)) {
+        @return (text-transform: $value);
+    }
+    @return null;
+}
+
+// Font properties parser handler
+// 
+// @param map $properties
+// @param map $options     
+// @return map
+// @internal
+@function font-property-normalizer-line-height($properties, $options) {
+    @if (map-has-key($properties, font-size) and map-has-key($properties, line-height)) {
+        $fs: map-get($properties, font-size);
+        $lh: map-get($properties, line-height);
+        @if ((type-of($fs) == number) and (type-of($lh) == number) and (unit($fs) == unit($lh))) {
+            $properties: map-merge($properties, (line-height: strip-units($lh / $fs)));
+        }
+    }
+    @return $properties;
+}
+
+// Font properties parser handler
+// 
+// @param map $properties
+// @param map $options     
+// @return map
+// @internal
+@function font-property-normalizer-important($properties, $options) {
+    @if (not map-has-key($options, important)) {
+        @return $properties;
+    }
+    $important: map-get($options, important);
+    @each $prop, $value in $properties {
+        @if (index($important, $prop) != null) {
+            $properties: map-merge($properties, ($prop: $value !important));
+        }
+    }
+    @return $properties;
 }
