@@ -71,16 +71,6 @@ $responsive-test-key: '---responsive-test-key---' !default;
     }
     // Current configuration is stored into responsive configurations storage to let handlers to process it using r-has/r-get
     $responsive-config: map-merge($responsive-config, ($id: $config)) !global;
-    @each $handler in $responsive-config-handlers {
-        $c: call($handler, $config, $id);
-        $responsive-cache-get: () !global;
-        @if (type-of($c) == map) {
-            $config: $c;
-            $responsive-config: map-merge($responsive-config, ($id: $config)) !global;
-        } @else {
-            @warn 'Responsive configuration handler #{$handler} doesn\'t return configuration map as it should';
-        }
-    }
     @if ($abstract) {
         $responsive-abstract-configurations: append($responsive-abstract-configurations, $id) !global;
     }
@@ -422,6 +412,17 @@ $responsive-test-key: '---responsive-test-key---' !default;
                 @error 'Given default responsive configuration "#{$default-id}" is abstract';
             } @else {
                 $responsive-default-id: $default-id !global;
+            }
+        }
+        @each $handler in $responsive-config-handlers {
+            @each $id in r-get-ids() {
+                $config: call($handler, map-get($responsive-config, $id), $id);
+                $responsive-cache-get: () !global;
+                @if (type-of($config) == map) {
+                    $responsive-config: map-merge($responsive-config, ($id: $config)) !global;
+                } @else {
+                    @warn 'Responsive configuration handler #{$handler} doesn\'t return configuration map as it should';
+                }
             }
         }
         @if (length(r-get-ids()) > 0) {
