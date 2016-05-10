@@ -437,7 +437,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
                         $responsive-cache-media-query: map-merge($responsive-cache-media-query, ($id: $mq)) !global;
                         $susy-media: map-merge($susy-media, ($id: $mq)) !global;
                     }
-                    $responsive-cache-layout: map-merge($responsive-cache-layout, ($id: r-get('/layout', null, $id))) !global;
+                    $responsive-cache-layout: map-merge($responsive-cache-layout, ($id: r-get('/layout', (), $id))) !global;
                 }
             }
             @if (length($susy) == 0) {
