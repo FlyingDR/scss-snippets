@@ -12,24 +12,28 @@ $responsive-susy-current-value: null !default;
         $default-math: susy-get(math);
         $default-value: r-get($key);
         @include r-each(true) {
-            $math: susy-get(math);
-            $value: r-get($key, $default-value);
-            @if ($math == static) {
-                @if ($value != null) {
-                    $responsive-susy-current-value: $value !global;
-                    @content;
-                }
-            } @else {
-                @if ($value != null and ($value != $default-value or $math != $default-math)) {
-                    $responsive-susy-current-value: $value !global;
-                    @content;
+            @if (r-has('/layout')) {
+                $math: susy-get(math);
+                $value: r-get($key, $default-value);
+                @if ($math == static) {
+                    @if ($value != null) {
+                        $responsive-susy-current-value: $value !global;
+                        @content;
+                    }
+                } @else {
+                    @if ($value != null and ($value != $default-value or $math != $default-math)) {
+                        $responsive-susy-current-value: $value !global;
+                        @content;
+                    }
                 }
             }
         }
     } @else if (not r-is-key($key, false)) {
         @include r-each(true) {
-            $responsive-susy-current-value: $key !global;
-            @content;
+            @if (r-has('/layout')) {
+                $responsive-susy-current-value: $key !global;
+                @content;
+            }
         }
     }
 }
