@@ -341,12 +341,13 @@ $responsive-test-key: '---responsive-test-key---' !default;
 
 // Simplification of iteration over available media queries
 //
-// @param mixed $layout     true to use default layout from configuration
-//                          false to disable layout use
-//                          string to either specify configuration key of layout to use or explicit shorthand layout
-//                          list or map to define explicit layout
-// @param string $if-key    Apply media query configuration only if given key is exists in corresponding responsive configuration
-@mixin r-each($layout: true, $if-key: null) {
+// @param mixed $layout         true to use default layout from configuration
+//                              false to disable layout use
+//                              string to either specify configuration key of layout to use or explicit shorthand layout
+//                              list or map to define explicit layout
+// @param string $if-key        Apply media query configuration only if given key is exists in corresponding responsive configuration
+// @param boolean $force-mq     true to use media query for default responsive configuration if it is defined
+@mixin r-each($layout: true, $if-key: null, $force-mq: false) {
     $current-default-key: $responsive-get-default-key;
     $responsive-get-default-key: $if-key !global;
     @each $id in r-get-ids() {
@@ -369,7 +370,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
                 } @else if (type-of($layout) == list or type-of($layout) == map) {
                     $l: $layout;
                 }
-                @if (($responsive-current-id != $responsive-default-id) and map-get($responsive-cache-media-query, $id) != null) {
+                @if ((($responsive-current-id != $responsive-default-id) or $force-mq) and map-get($responsive-cache-media-query, $id) != null) {
                     @include susy-breakpoint($id, false) {
                         @if ($l) {
                             @include with-layout($l, true) {
@@ -396,8 +397,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
 }
 
 // Version of r-each() with mandatory $if-key
-@mixin r-each-if($if-key, $layout: true) {
-    @include r-each($layout, $if-key) {
+@mixin r-each-if($if-key, $layout: true, $force-mq: false) {
+    @include r-each($layout, $if-key, $force-mq) {
         @content;
     }
 }
