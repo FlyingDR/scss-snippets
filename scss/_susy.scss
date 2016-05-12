@@ -44,6 +44,12 @@ $responsive-susy-current-value: null !default;
     }
 }
 
+@mixin r-span-width($key) {
+    @include responsive-susy-runner($key) {
+        width: span($responsive-susy-current-value);
+    }
+}
+
 @mixin r-gutters($key) {
     @include responsive-susy-runner($key) {
         @include gutters($responsive-susy-current-value);
@@ -53,6 +59,12 @@ $responsive-susy-current-value: null !default;
 @mixin r-container($key) {
     @include responsive-susy-runner($key) {
         @include container($responsive-susy-current-value);
+    }
+}
+
+@mixin r-container-width($key) {
+    @include responsive-susy-runner($key) {
+        width: container($responsive-susy-current-value);
     }
 }
 
