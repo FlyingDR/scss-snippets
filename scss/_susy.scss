@@ -6,7 +6,7 @@ $responsive-susy-current-value: null !default;
 
 // Runner for responsive Susy mixins
 // 
-// @param mixed $key   Either responsive configuration key to take information from or actual information for Suxy mixin 
+// @param mixed $key   Either responsive configuration key to take information from or actual information for Susy mixin 
 @mixin responsive-susy-runner($key) {
     @if (r-is-key($key, true)) {
         $default-math: susy-get(math);
