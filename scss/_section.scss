@@ -14,46 +14,23 @@ $section-settings: (
 // offset-type {margin|padding} - Explicit type of offset to use, detected automatically if not defined
 // outer-bg {color|string}      - Background or background color to set to outer section element
 // inner-bg {color|string}      - Background or background color to set to inner section element  
-// outer-css {map}              - Map of additional CSS properties to apply to outer section element 
-// inner-css {map}              - Map of additional CSS properties to apply to inner section element 
 
 // Parse given section options
 //
 // @param string|map $options   Options to parse
 // @return map
-@function section-parse-options($options) {
-    @if (type-of($options) == map) {
-        // Treat map argument as "already parsed options"
-        @return $options;
-    } @else if ($options == null) {
-        @return ();
+@function section-parse-options($section, $options: null) {
+    $parser-id: scss-snippets-section;
+    @if (not properties-parser-is-registered($parser-id)) {
+        $p: register-properties-parser($parser-id, (
+            parse: (
+                section-property-parser-offset-type,
+                section-property-parser-offset,
+                section-property-parser-background,
+            ),
+        ));
     }
-    $properties: ();
-    $added: ();
-    @each $item in $options {
-        $ik: null;
-        $iv: $item;
-        @if (not index($added, top-offset) and (type-of($item) == number)) {
-            $ik: top-offset;
-        } @else if (not index($added, bottom-offset) and (type-of($item) == number)) {
-            $ik: bottom-offset;
-        } @else if (not index($added, inner-bg) and (type-of($item) == color)) {
-            $ik: inner-bg;
-        } @else if (not index($added, inner-bg) and (type-of($item) == string)) {
-            $ik: inner-bg;
-        } @else if (not index($added, outer-bg) and (type-of($item) == color)) {
-            $ik: outer-bg;
-        } @else if (not index($added, outer-bg) and (type-of($item) == string)) {
-            $ik: outer-bg;
-        } @else if (not index($added, offset-type) and index(padding margin, $item)) {
-            $ik: offset-type;
-        }
-        @if ($ik != null) {
-            $properties: map-merge($properties, ($ik: $iv));
-            $added: append($added, $ik);
-        }
-    }
-    @return $properties;
+    @return parse-properties($parser-id, $section, $options);
 }
 
 // Normalize and get global section settings
@@ -252,4 +229,61 @@ $section-settings: (
             @include _section-padding($outer, $inner);
         }
     }
+}
+
+// Section properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function section-property-parser-offset-type($value, $properties, $options) {
+    @if (map-has-key($properties, offset-type)) {
+        @return null;
+    }
+    @if (index(m margin, $value)) {
+        @return (offset-type: margin);
+    } @else if (index(p padding, $value)) {
+        @return (offset-type: padding);
+    }
+    @return null;
+}
+
+// Section properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function section-property-parser-offset($value, $properties, $options) {
+    @if (type-of($value) != number) {
+        @return null;
+    }
+    @if (not map-has-key($properties, top-offset)) {
+        @return (top-offset: $value);
+    } @else if (not map-has-key($properties, bottom-offset)) {
+        @return (bottom-offset: $value);
+    }
+    @return null;
+}
+
+// Section properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function section-property-parser-background($value, $properties, $options) {
+    @if (type-of($value) != color and type-of($value) != string) {
+        @return null;
+    }
+    @if (not map-has-key($properties, inner-bg)) {
+        @return (inner-bg: $value);
+    } @else if (not map-has-key($properties, outer-bg)) {
+        @return (outer-bg: $value);
+    }
+    @return null;
 }
