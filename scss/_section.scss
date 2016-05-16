@@ -23,6 +23,9 @@ $section-settings: (
     $parser-id: scss-snippets-section;
     @if (not properties-parser-is-registered($parser-id)) {
         $p: register-properties-parser($parser-id, (
+            prepare: (
+                section-property-parser-prepare-options,
+            ),
             parse: (
                 section-property-parser-offset-type,
                 section-property-parser-offset,
@@ -240,6 +243,47 @@ $section-settings: (
 
 // Section properties parser handler
 // 
+// @param list $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function section-property-parser-prepare-options($properties, $options) {
+    $resulted-properties: ();
+    $result: ();
+    $set-as: null;
+    @each $property in $properties {
+        @if (index(o outer, $property) != null) {
+            $set-as: outer-bg;
+        } @else if (index(i inner, $property) != null) {
+            $set-as: inner-bg;
+        } @else if (index(t top top-offset, $property) != null) {
+            $set-as: top-offset;
+        } @else if (index(b bottom bottom-offset, $property) != null) {
+            $set-as: bottom-offset;
+        } @else if ($set-as != null) {
+            $r: null;
+            @if ($set-as == outer-bg or $set-as == inner-bg) {
+                //noinspection CssInvalidFunction
+                $r: section-property-parser-background($property, $result, map-merge($options, (property: $set-as)));
+            } @else if ($set-as == top-offset or $set-as == bottom-offset) {
+                //noinspection CssInvalidFunction
+                $r: section-property-parser-offset($property, $result, map-merge($options, (property: $set-as)));
+            }
+            @if ($r != null) {
+                $result: map-merge($result, $r);
+            } @else {
+                $resulted-properties: append($resulted-properties, $property);
+            }
+            $set-as: null;
+        } @else {
+            $resulted-properties: append($resulted-properties, $property);
+        }
+    }
+    @return (properties: $resulted-properties, result: $result);
+}
+
+// Section properties parser handler
+// 
 // @param mixed $value
 // @param map $properties      
 // @param map $options     
@@ -268,10 +312,16 @@ $section-settings: (
     @if (type-of($value) != number) {
         @return null;
     }
-    @if (not map-has-key($properties, top-offset)) {
-        @return (top-offset: $value);
+    $property: null;
+    @if (map-has-key($options, property)) {
+        $property: map-get($options, property);
+    } @else if (not map-has-key($properties, top-offset)) {
+        $property: top-offset;
     } @else if (not map-has-key($properties, bottom-offset)) {
-        @return (bottom-offset: $value);
+        $property: bottom-offset;
+    }
+    @if ($property != null) {
+        @return ($property: $value);
     }
     @return null;
 }
@@ -287,10 +337,16 @@ $section-settings: (
     @if (type-of($value) != color and type-of($value) != string) {
         @return null;
     }
-    @if (not map-has-key($properties, inner-bg)) {
-        @return (inner-bg: $value);
+    $property: null;
+    @if (map-has-key($options, property)) {
+        $property: map-get($options, property);
+    } @else if (not map-has-key($properties, inner-bg)) {
+        $property: inner-bg;
     } @else if (not map-has-key($properties, outer-bg)) {
-        @return (outer-bg: $value);
+        $property: outer-bg;
+    }
+    @if ($property != null) {
+        @return ($property: $value);
     }
     @return null;
 }
