@@ -68,19 +68,6 @@ $section-settings: (
     }
 }
 
-// Apply additional CSS properties for section 
-//
-// @param map $options      Section options set
-// @param string $prefix    Prefix for option name to use
-// @internal
-@mixin _section-css($options, $prefix) {
-    @if (map-has-key($options, #{$prefix}-css)) {
-        @each $prop, $value in map-get($options, #{$prefix}-css) {
-            #{$prop}: v($value);
-        }
-    }
-}
-
 // Apply additional horizontal padding for section 
 //
 // @param number|null $outer    Padding for outer section element
@@ -134,7 +121,6 @@ $section-settings: (
     $options: section-parse-options($options);
 
     @include _section-bg($options, outer);
-    @include _section-css($options, outer);
     > #{map-get(_section-settings(), inner-selector)} {
         // Vertical offsets
         $top: null;
@@ -162,7 +148,6 @@ $section-settings: (
             #{$offset-type}-bottom: v($bottom);
         }
         @include _section-bg($options, inner);
-        @include _section-css($options, inner);
     }
 }
 
