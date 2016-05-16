@@ -119,33 +119,53 @@ $section-settings: (
 // @param string|list|map|null $options     Section options that can be recognized by section-parse-options() 
 @mixin section($options: null) {
     $options: section-parse-options($options);
-
+    $default-options: ();
+    @if (map-has-key($options, default-options)) {
+        $default-options: map-get($options, default-options);
+    }
+    // Vertical offsets
+    $top: null;
+    $bottom: null;
+    $offset-type: margin;
+    $offset-placement: inner;
+    @if (map-has-key($options, inner-bg) or map-has-key($default-options, inner-bg)) {
+        $offset-type: padding;
+    }
+    @if (map-has-key($options, outer-bg) or map-has-key($default-options, outer-bg)) {
+        $offset-type: padding;
+        $offset-placement: outer;
+    }
+    @if (map-has-key($options, offset-type)) {
+        $offset-type: map-get($options, offset-type);
+    } @else if (map-has-key($default-options, offset-type)) {
+        $offset-type: map-get($default-options, offset-type);
+    }
+    @if (map-has-key($options, top-offset)) {
+        $top: map-get($options, top-offset);
+    }
+    @if (map-has-key($options, bottom-offset)) {
+        $bottom: map-get($options, bottom-offset);
+    }
+    @if ($top != null and $bottom == null) {
+        $bottom: $top;
+    }
     @include _section-bg($options, outer);
-    > #{map-get(_section-settings(), inner-selector)} {
-        // Vertical offsets
-        $top: null;
-        $bottom: null;
-        $offset-type: margin;
-        @if (map-has-key($options, inner-bg)) {
-            $offset-type: padding;
-        }
-        @if (map-has-key($options, offset-type)) {
-            $offset-type: map-get($options, offset-type);
-        }
-        @if (map-has-key($options, top-offset)) {
-            $top: map-get($options, top-offset);
-        }
-        @if (map-has-key($options, bottom-offset)) {
-            $bottom: map-get($options, bottom-offset);
-        }
-        @if ($top != null and $bottom == null) {
-            $bottom: $top;
-        }
+    @if ($offset-placement == outer) {
         @if ($top != null) {
             #{$offset-type}-top: v($top);
         }
         @if ($bottom != null) {
             #{$offset-type}-bottom: v($bottom);
+        }
+    }
+    > #{map-get(_section-settings(), inner-selector)} {
+        @if ($offset-placement == inner) {
+            @if ($top != null) {
+                #{$offset-type}-top: v($top);
+            }
+            @if ($bottom != null) {
+                #{$offset-type}-bottom: v($bottom);
+            }
         }
         @include _section-bg($options, inner);
     }
@@ -156,10 +176,12 @@ $section-settings: (
 // @param string $key                       Responsive configuration key to take section options from
 // @param string|list|map|null $options     Section options that can be recognized by section-parse-options() 
 @mixin r-section($key, $options: null) {
-    @include section($options);
+    $default-options: section-parse-options($options);
+    @include section($default-options);
     @if (function-exists(is-responsive) and is-responsive()) {
         @include r-each-if($key) {
-            @include section(r-get($key));
+            $local-options: map-merge(section-parse-options(r-get()), (default-options: $default-options));
+            @include section($local-options);
         }
     }
 }
