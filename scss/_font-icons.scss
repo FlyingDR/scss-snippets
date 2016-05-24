@@ -198,6 +198,9 @@ $font-icons-config: (
             @if (map-get($options, align) != null) {
                 top: map-get($options, align);
             }
+            @if (map-get($options, standalone) and map-get($options, offset) != null) {
+                left: map-get($options, offset);
+            }
         }
         @if (map-get($options, color) != null) {
             color: map-get($options, color);
