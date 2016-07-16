@@ -1,6 +1,6 @@
 {
   "name": "scss-snippets",
-  "version": "0.6.13",
+  "version": "0.6.14",
   "description": "Collection of helpful SCSS mixins and functions to use into various projects",
   "main": "",
   "scripts": {
