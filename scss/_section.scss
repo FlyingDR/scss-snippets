@@ -256,7 +256,7 @@ $section-settings: (
             $set-as: outer-bg;
         } @else if (index(i inner, $property) != null) {
             $set-as: inner-bg;
-        } @else if (index(t top top-offset, $property) != null) {
+        } @else if (index(t top offset top-offset, $property) != null) {
             $set-as: top-offset;
         } @else if (index(b bottom bottom-offset, $property) != null) {
             $set-as: bottom-offset;
