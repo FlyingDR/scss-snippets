@@ -66,6 +66,9 @@ $font-icons-config: (
     text-indent: 1em;
     text-overflow: clip;
     white-space: nowrap;
+    &:before {
+        text-indent: 0;
+    }
 }
 
 // Get font icon code by its name
