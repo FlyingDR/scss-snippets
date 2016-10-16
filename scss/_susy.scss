@@ -15,16 +15,9 @@ $responsive-susy-current-value: null !default;
             @if (r-has('/layout')) {
                 $math: susy-get(math);
                 $value: r-get($key, $default-value);
-                @if ($math == static) {
-                    @if ($value != null) {
-                        $responsive-susy-current-value: $value !global;
-                        @content;
-                    }
-                } @else {
-                    @if ($value != null and ($value != $default-value or $math != $default-math)) {
-                        $responsive-susy-current-value: $value !global;
-                        @content;
-                    }
+                @if ($value != null and (r-id() == $responsive-default-id or $math == static or $value != $default-value or $math != $default-math)) {
+                    $responsive-susy-current-value: $value !global;
+                    @content;
                 }
             }
         }
