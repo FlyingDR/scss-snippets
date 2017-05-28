@@ -14,6 +14,10 @@ $section-settings: (
 // offset-type {margin|padding} - Explicit type of offset to use, detected automatically if not defined
 // outer-bg {color|string}      - Background or background color to set to outer section element
 // inner-bg {color|string}      - Background or background color to set to inner section element  
+// outer-padding: {number|unit} - Padding to add to outer section element to provide visual spacing between screen boundaries and site itself
+// inner-padding: {number|unit} - Padding to add to inner section element to provide visual spacing around site content 
+
+// Padding to add to inner section element to provide visual spacing around site content 
 
 // Parse given section options
 //
@@ -29,6 +33,8 @@ $section-settings: (
             parse: (
                 section-property-parser-offset-type,
                 section-property-parser-offset,
+                section-property-parser-padding,
+                section-property-parser-no-padding,
                 section-property-parser-background,
             ),
         ));
@@ -75,15 +81,20 @@ $section-settings: (
 //
 // @param number|null $outer    Padding for outer section element
 // @param number|null $inner    Padding for inner section element
+// @param boolean $important    Mark padding values as important to override default section settings
 // @internal
-@mixin _section-padding($outer: null, $inner: null) {
+@mixin _section-padding($outer: null, $inner: null, $important: false) {
     $op: 0;
     $ip: 0;
+    $imp: null;
     @if ($outer != null) {
         $op: v($outer);
     }
     @if ($inner != null) {
         $ip: v($inner);
+    }
+    @if ($important) {
+        $imp: unquote('!important');
     }
     $container: v(container());
     $static-container: unit($container) != '%';
@@ -97,8 +108,8 @@ $section-settings: (
         min-width: 0;
     }
     @if ($outer != null) {
-        padding-left: $op;
-        padding-right: $op;
+        padding-left: $op $imp;
+        padding-right: $op $imp;
     }
     > #{map-get(_section-settings(), inner-selector)} {
         @if (not $static-container) {
@@ -111,8 +122,8 @@ $section-settings: (
             } @else {
                 max-width: 100%;
             }
-            padding-left: $ip;
-            padding-right: $ip;
+            padding-left: $ip $imp;
+            padding-right: $ip $imp;
         }
     }
 }
@@ -151,6 +162,9 @@ $section-settings: (
     }
     @if ($top != null and $bottom == null) {
         $bottom: $top;
+    }
+    @if (map-has-key($options, outer-padding) or map-has-key($options, inner-padding)) {
+        @include _section-padding(map-get($options, outer-padding), map-get($options, inner-padding), true);
     }
     @include _section-bg($options, outer);
     @if ($offset-placement == outer) {
@@ -260,14 +274,21 @@ $section-settings: (
             $set-as: top-offset;
         } @else if (index(b bottom bottom-offset, $property) != null) {
             $set-as: bottom-offset;
+        } @else if (index(op, $property) != null) {
+            $set-as: outer-padding;
+        } @else if (index(ip, $property) != null) {
+            $set-as: inner-padding;
         } @else if ($set-as != null) {
             $r: null;
-            @if ($set-as == outer-bg or $set-as == inner-bg) {
+            @if (index(outer-bg inner-bg, $set-as) != null) {
                 //noinspection CssInvalidFunction
                 $r: section-property-parser-background($property, $result, map-merge($options, (property: $set-as)));
-            } @else if ($set-as == top-offset or $set-as == bottom-offset) {
+            } @else if (index(top-offset bottom-offset, $set-as) != null) {
                 //noinspection CssInvalidFunction
                 $r: section-property-parser-offset($property, $result, map-merge($options, (property: $set-as)));
+            } @else if (index(outer-padding inner-padding, $set-as) != null) {
+                //noinspection CssInvalidFunction
+                $r: section-property-parser-padding($property, $result, map-merge($options, (property: $set-as)));
             }
             @if ($r != null) {
                 $result: map-merge($result, $r);
@@ -347,6 +368,51 @@ $section-settings: (
     }
     @if ($property != null) {
         @return ($property: $value);
+    }
+    @return null;
+}
+
+// Section properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function section-property-parser-padding($value, $properties, $options) {
+    @if (type-of($value) != number) {
+        @return null;
+    }
+    $property: null;
+    @if (map-has-key($options, property)) {
+        $property: map-get($options, property);
+    } @else if (not map-has-key($properties, outer-padding)) {
+        $property: outer-padding;
+    } @else if (not map-has-key($properties, inner-padding)) {
+        $property: inner-padding;
+    }
+    @if ($property != null) {
+        @return ($property: $value);
+    }
+    @return null;
+}
+
+// Section properties parser handler
+// 
+// @param mixed $value
+// @param map $properties      
+// @param map $options     
+// @return map|null
+// @internal
+@function section-property-parser-no-padding($value, $properties, $options) {
+    @if (map-has-key($properties, outer-padding) or map-has-key($properties, inner-padding)) {
+        @return null;
+    }
+    @if (index(no-padding np, $value)) {
+        @return (
+            outer-padding: 0,
+            inner-padding: 0,
+        );
     }
     @return null;
 }
