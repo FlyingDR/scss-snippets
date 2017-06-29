@@ -342,6 +342,7 @@ $offset-properties-parser-id: scss-snippets-offset;
                 }
                 $r: append($r, $v);
             }
+            $value: $r;
         } @else if (type-of($value) == number and $value != 0) {
             $value: 0 - $value;
         }
