@@ -3,8 +3,8 @@ $offset-cache-options-handler: () !default;
 $offset-cache-values-handler: () !default;
 $offset-properties-parser-id: scss-snippets-offset;
 
-// Parse given offset information 
-// 
+// Parse given offset information
+//
 // @param list $offset          List of offset properties to parse
 // @param list|map $options     Offset options to use for parsing (will override options given in $offset)
 // @return map
@@ -31,7 +31,7 @@ $offset-properties-parser-id: scss-snippets-offset;
 }
 
 // Generate element offsets based on provided information
-// 
+//
 // @param list $offset          List of offset properties to parse
 // @param list|map $options     Offset options to use for parsing (will override options given in $offset)
 @mixin offset($offset, $options: null) {
@@ -41,7 +41,7 @@ $offset-properties-parser-id: scss-snippets-offset;
 }
 
 // Generate element offsets based on information from responsive configuration
-// 
+//
 // @param string $key           Key into responsive configuration to use
 // @param list $offset          List of offset properties to parse
 // @param list|map $options     Offset options to use for parsing (will override options given in $offset)
@@ -54,7 +54,7 @@ $offset-properties-parser-id: scss-snippets-offset;
 }
 
 // Offset options normalization. Part of offset properties parser handlers set
-// 
+//
 // @param list|map $options     Offset options to normalize
 // @return map
 // @internal
@@ -140,9 +140,9 @@ $offset-properties-parser-id: scss-snippets-offset;
 }
 
 // Offset options parser handler. Part of offset properties parser handlers set
-// 
-// @param list $properties 
-// @param map $options     
+//
+// @param list $properties
+// @param map $options
 // @return map
 // @internal
 @function offset-property-parser-options-handler($properties, $options) {
@@ -190,9 +190,9 @@ $offset-properties-parser-id: scss-snippets-offset;
 }
 
 // Offset options parser handler. Part of offset properties parser handlers set
-// 
-// @param list $properties      
-// @param map $options     
+//
+// @param list $properties
+// @param map $options
 // @return map
 // @internal
 @function offset-property-parser-values-handler($properties, $options) {
@@ -324,10 +324,10 @@ $offset-properties-parser-id: scss-snippets-offset;
 }
 
 // Offset options parser handler. Part of offset properties parser handlers set
-// 
+//
 // @param mixed $value
 // @param map $result
-// @param map $options     
+// @param map $options
 // @return map
 // @internal
 @function offset-property-parser-values-renderer($value, $result, $options) {

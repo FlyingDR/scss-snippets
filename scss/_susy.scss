@@ -1,12 +1,12 @@
 // Responsive versions of corresponding Susy mixins that takes information from responsive configuration
-// They're useful in a case if there is multiple responsive configuration with different layouts that may result 
+// They're useful in a case if there is multiple responsive configuration with different layouts that may result
 // into different span sizes especially in a case of layouts that use static math or mixed math in different layouts
 
 $responsive-susy-current-value: null !default;
 
 // Runner for responsive Susy mixins
-// 
-// @param mixed $key   Either responsive configuration key to take information from or actual information for Susy mixin 
+//
+// @param mixed $key   Either responsive configuration key to take information from or actual information for Susy mixin
 @mixin responsive-susy-runner($key) {
     @if (r-is-key($key, true)) {
         $default-math: susy-get(math);

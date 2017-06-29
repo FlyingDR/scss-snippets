@@ -19,7 +19,7 @@ $units-initialized: false !default;
     @each $v in $value {
         @if (type-of($v) == list and length($v) == 1) {
             $v: nth($v, 1);
-        } 
+        }
         @if (type-of($v) == number) {
             @if (unitless($v) and $v != 0) {
                 //noinspection CssInvalidFunction

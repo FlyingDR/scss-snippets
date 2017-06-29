@@ -1,16 +1,16 @@
 // Types of handlers for properties parsers:
 //
 // - prepare        Handler should accept (list $properties, map $options) and return either map with any of keys (properties, options, result) or null
-// - parse          Handler should accept (mixed $value, map $result, map $options) arguments 
+// - parse          Handler should accept (mixed $value, map $result, map $options) arguments
 //                  and return null if no result is available or ($property: $value) map of resulted properties
 // - normalize      Handler should accept (map $result, map $options) and return new resulted properties map
-// 
+//
 $properties-parser-registered-handlers: () !default;
 $properties-parser-default-options: () !default;
 $properties-parser-default-properties: () !default;
 
 // Determine if properties parser with given id is already registered
-// 
+//
 // @param string $parser-id     Properties parser id
 // @return boolean
 @function properties-parser-is-registered($parser-id) {
@@ -18,11 +18,11 @@ $properties-parser-default-properties: () !default;
 }
 
 // Register new properties parser
-// 
+//
 // @param string $parser-id         Properties parser id
 // @param map $parser-handlers      Parser handlers to register
 // @param map $default-options      Default options set for parser
-// @param map $default-properties   Default set of parser properties 
+// @param map $default-properties   Default set of parser properties
 // @return map                      Newly registered parser
 @function register-properties-parser($parser-id, $parser-handlers: null, $default-options: null, $default-properties: null) {
     @if (properties-parser-is-registered($parser-id)) {
@@ -59,7 +59,7 @@ $properties-parser-default-properties: () !default;
 }
 
 // Get list of properties parser handlers of given type or whole set of properties handlers for given properties parser
-// 
+//
 // @param string $parser-id     Properties parser id
 // @param string|null $type     Type of handlers to get or null to get whole parser
 // @return list|map
@@ -80,7 +80,7 @@ $properties-parser-default-properties: () !default;
 }
 
 // Add handler for given properties parser
-// 
+//
 // @param string $parser-id         Properties parser id to work with
 // @param string $handler           Handler function name
 // @param string $type              Handler type (parse, normalize)
@@ -115,7 +115,7 @@ $properties-parser-default-properties: () !default;
 }
 
 // Remove properties parser handler from given parser
-// 
+//
 // @param string $parser-id     Properties parser id to work with
 // @param string $handler       Handler function name to remove
 // @return map                  Modified parser structure
@@ -136,7 +136,7 @@ $properties-parser-default-properties: () !default;
 }
 
 // Replace properties parser handler with new handler
-// 
+//
 // @param string $parser-id             Properties parser id to work with
 // @param string $handler-to-replace    Handler function name to replace
 // @param string $new-handler           Handler function name to set instead $handler-to-replace
@@ -160,7 +160,7 @@ $properties-parser-default-properties: () !default;
 }
 
 // Get registered default options for given properties parser
-// 
+//
 // @param string $parser-id     Properties parser id to work with
 // @return map|null
 @function properties-parser-get-default-options($parser-id) {
@@ -171,7 +171,7 @@ $properties-parser-default-properties: () !default;
 }
 
 // Update default options for given properties parser
-// 
+//
 // @param string $parser-id     Properties parser id to work with
 // @param string|map $name      Either option name or options map
 // @param mixed $value          Option value
@@ -196,7 +196,7 @@ $properties-parser-default-properties: () !default;
 }
 
 // Get registered default properties for given properties parser
-// 
+//
 // @param string $parser-id     Properties parser id to work with
 // @return map|null
 @function properties-parser-get-default-properties($parser-id) {
@@ -207,7 +207,7 @@ $properties-parser-default-properties: () !default;
 }
 
 // Update default properties for given properties parser
-// 
+//
 // @param string $parser-id     Properties parser id to work with
 // @param string|map $name      Either property name or properties map
 // @param mixed $value          Property value

@@ -3,21 +3,21 @@ $section-settings: (
     outer-selector: 'body > section', // Selector for outer element of section
     inner-selector: 'section', // Selector for inner element of section, should be child of outer element
     outer-padding: null, // Padding to add to outer section element to provide visual spacing between screen boundaries and site itself
-    inner-padding: null, // Padding to add to inner section element to provide visual spacing around site content 
-    options: null, // Default section options to apply globally to all sections. Either string parsable by section-parse-options() map with section options (see below) 
+    inner-padding: null, // Padding to add to inner section element to provide visual spacing around site content
+    options: null, // Default section options to apply globally to all sections. Either string parsable by section-parse-options() map with section options (see below)
 ) !default;
 
 // Available section options:
-// 
-// top-offset {number|unit}     - Offset to apply at the top of section 
+//
+// top-offset {number|unit}     - Offset to apply at the top of section
 // bottom-offset {number|unit}  - Offset to apply at the bottom of section. Equals to top offset if not defined
 // offset-type {margin|padding} - Explicit type of offset to use, detected automatically if not defined
 // outer-bg {color|string}      - Background or background color to set to outer section element
-// inner-bg {color|string}      - Background or background color to set to inner section element  
+// inner-bg {color|string}      - Background or background color to set to inner section element
 // outer-padding: {number|unit} - Padding to add to outer section element to provide visual spacing between screen boundaries and site itself
-// inner-padding: {number|unit} - Padding to add to inner section element to provide visual spacing around site content 
+// inner-padding: {number|unit} - Padding to add to inner section element to provide visual spacing around site content
 
-// Padding to add to inner section element to provide visual spacing around site content 
+// Padding to add to inner section element to provide visual spacing around site content
 
 // Parse given section options
 //
@@ -60,7 +60,7 @@ $section-settings: (
     @return map-merge($section-settings, $settings);
 }
 
-// Apply background options for section 
+// Apply background options for section
 //
 // @param map $options      Section options set
 // @param string $prefix    Prefix for option name to use
@@ -77,7 +77,7 @@ $section-settings: (
     }
 }
 
-// Apply additional horizontal padding for section 
+// Apply additional horizontal padding for section
 //
 // @param number|null $outer    Padding for outer section element
 // @param number|null $inner    Padding for inner section element
@@ -128,9 +128,9 @@ $section-settings: (
     }
 }
 
-// Render section with given options 
+// Render section with given options
 //
-// @param string|list|map|null $options     Section options that can be recognized by section-parse-options() 
+// @param string|list|map|null $options     Section options that can be recognized by section-parse-options()
 @mixin section($options: null) {
     $options: section-parse-options($options);
     $default-options: ();
@@ -191,7 +191,7 @@ $section-settings: (
 // Render section with options taken from responsive configuration
 //
 // @param string $key                       Responsive configuration key to take section options from
-// @param string|list|map|null $options     Section options that can be recognized by section-parse-options() 
+// @param string|list|map|null $options     Section options that can be recognized by section-parse-options()
 @mixin r-section($key, $options: null) {
     $default-options: section-parse-options($options);
     @include section($default-options);
@@ -205,8 +205,8 @@ $section-settings: (
 
 // Initialize section module
 //
-// @param string|list|map|null $options     Default section options to use 
-// @param map|null $settings                Modification to apply to global section settings 
+// @param string|list|map|null $options     Default section options to use
+// @param map|null $settings                Modification to apply to global section settings
 @mixin section-init($options: null, $settings: null) {
     $settings: _section-settings($settings);
     $section-settings: $settings !global;
@@ -256,9 +256,9 @@ $section-settings: (
 }
 
 // Section properties parser handler
-// 
-// @param list $properties      
-// @param map $options     
+//
+// @param list $properties
+// @param map $options
 // @return map|null
 // @internal
 @function section-property-parser-prepare-options($properties, $options) {
@@ -304,10 +304,10 @@ $section-settings: (
 }
 
 // Section properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function section-property-parser-offset-type($value, $properties, $options) {
@@ -323,10 +323,10 @@ $section-settings: (
 }
 
 // Section properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function section-property-parser-offset($value, $properties, $options) {
@@ -348,10 +348,10 @@ $section-settings: (
 }
 
 // Section properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function section-property-parser-background($value, $properties, $options) {
@@ -373,10 +373,10 @@ $section-settings: (
 }
 
 // Section properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function section-property-parser-padding($value, $properties, $options) {
@@ -398,10 +398,10 @@ $section-settings: (
 }
 
 // Section properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function section-property-parser-no-padding($value, $properties, $options) {

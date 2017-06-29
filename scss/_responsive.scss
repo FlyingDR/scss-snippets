@@ -18,7 +18,7 @@ $responsive-is-initialized: false !default;
 $responsive-test-key: '---responsive-test-key---' !default;
 
 // Add responsive configuration handler
-// 
+//
 // @param string $handler   Handler function name. It should accept (map $config, string $id) arguments and return responsive configuration map
 @mixin responsive-add-handler($handler) {
     @if (not function-exists($handler)) {
@@ -28,7 +28,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
 }
 
 // Remove responsive configuration handler
-// 
+//
 // @param string $handler   Handler function name to remove
 @mixin responsive-remove-handler($handler) {
     $handlers: ();
@@ -277,7 +277,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
 }
 
 // Define prefix for responsive configuration keys passed to r-get() / r-has() to simplify code
-// 
+//
 // @param string $prefix
 @mixin r-with($prefix) {
     @if (str-slice($prefix, 1, 1) == '/') {
@@ -293,21 +293,21 @@ $responsive-test-key: '---responsive-test-key---' !default;
 }
 
 // Check if responsive configuration key prefix is currently used
-// 
+//
 // @return boolean
 @function r-have-key-prefix() {
     @return $responsive-get-key-prefix != null;
 }
 
-// Get current responsive configuration key prefix 
-// 
+// Get current responsive configuration key prefix
+//
 // @return string|null
 @function r-get-key-prefix() {
     @return $responsive-get-key-prefix;
 }
 
 // Check if given information can be treated as responsive configuration key
-// 
+//
 // @param mixed $key                Information to check as a key
 // @param boolean $only-if-exists   Only treat given information as a key if it is actually available in responsive configuration
 // @return boolean
@@ -551,8 +551,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
                     }
                     $query: map-merge($query, ($key: $value));
                 } @else {
-                    @warn 'Responsive configuration identifier "#{$value}" is used for media query parameter "#{$key}" into responsive configuration "#{$id}", ' + 
-                    'but it can\'t be used as media query breakpoint because target responsive configuration have no fixed container size. ' + 
+                    @warn 'Responsive configuration identifier "#{$value}" is used for media query parameter "#{$key}" into responsive configuration "#{$id}", ' +
+                    'but it can\'t be used as media query breakpoint because target responsive configuration have no fixed container size. ' +
                     'You can set "media-query-container" key at "#{$value}" to let it to be used as media query breakpoint';
                 }
             } @else if (type-of($value) == number and unitless($value)) {
@@ -570,8 +570,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
                     }
                     $query: set-nth($query, $index, $value);
                 } @else {
-                    @warn 'Responsive configuration identifier "#{$value}" is used as media query breakpoint into responsive configuration "#{$id}", ' + 
-                    'but it can\'t be used here because target responsive configuration have no fixed container size. ' + 
+                    @warn 'Responsive configuration identifier "#{$value}" is used as media query breakpoint into responsive configuration "#{$id}", ' +
+                    'but it can\'t be used here because target responsive configuration have no fixed container size. ' +
                     'You can set "media-query-container" key at "#{$value}" to let it to be used as media query breakpoint';
                 }
             } @else if (type-of($value) == number and unitless($value)) {
@@ -584,8 +584,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
             @if (map-has-key($containers, $query)) {
                 $query: v(map-get($containers, $query));
             } @else {
-                @warn 'Responsive configuration identifier "#{$query}" is used as media query breakpoint into responsive configuration "#{$id}", ' + 
-                    'but it can\'t be used here because target responsive configuration have no fixed container size. ' + 
+                @warn 'Responsive configuration identifier "#{$query}" is used as media query breakpoint into responsive configuration "#{$id}", ' +
+                    'but it can\'t be used here because target responsive configuration have no fixed container size. ' +
                     'You can set "media-query-container" key at "#{$query}" to let it to be used as media query breakpoint';
             }
         } @else if (type-of($query) == number and unitless($query)) {

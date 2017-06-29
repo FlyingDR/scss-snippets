@@ -72,7 +72,7 @@ $font-icons-config: (
 }
 
 // Get font icon code by its name
-// 
+//
 // @param string $icon  Font icon name
 // @return string
 @function font-icon($icon) {
@@ -129,8 +129,8 @@ $font-icons-config: (
 }
 
 // Create font icon by given parameters
-// 
-// @param list $icon    Font icon parameters list 
+//
+// @param list $icon    Font icon parameters list
 @mixin font-icon($icon) {
     $options: parse-font-icon($icon);
 
@@ -212,7 +212,7 @@ $font-icons-config: (
 }
 
 // Initialize font icons module
-// 
+//
 // @param map $config               Font icons configuration, @see $font-icons-config
 // @param list|boolean $register    List of font icons to register as separate CSS classes or true to register all icons
 // @param list|map|boolean $align   true to register CSS classes for icons alignment adjusting, list or map to customize alignment parameters
@@ -288,9 +288,9 @@ $font-icons-config: (
 }
 
 // Font icons properties parser handler
-// 
-// @param list $properties      
-// @param map $options     
+//
+// @param list $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-icons-property-parser-prepare-options($properties, $options) {
@@ -328,10 +328,10 @@ $font-icons-config: (
 }
 
 // Font icons properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-icons-property-parser-icon-name($value, $properties, $options) {
@@ -345,10 +345,10 @@ $font-icons-config: (
 }
 
 // Font icons properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-icons-property-parser-color($value, $properties, $options) {
@@ -362,10 +362,10 @@ $font-icons-config: (
 }
 
 // Font icons properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-icons-property-parser-align($value, $properties, $options) {
@@ -385,10 +385,10 @@ $font-icons-config: (
 }
 
 // Font icons properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-icons-property-parser-offset($value, $properties, $options) {
@@ -407,10 +407,10 @@ $font-icons-config: (
 }
 
 // Font icons properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-icons-property-parser-size($value, $properties, $options) {
@@ -429,10 +429,10 @@ $font-icons-config: (
 }
 
 // Font icons properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-icons-property-parser-position($value, $properties, $options) {
@@ -448,10 +448,10 @@ $font-icons-config: (
 }
 
 // Font icons properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-icons-property-parser-standalone($value, $properties, $options) {
@@ -465,10 +465,10 @@ $font-icons-config: (
 }
 
 // Font icons properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-icons-property-parser-only-content($value, $properties, $options) {
@@ -482,9 +482,9 @@ $font-icons-config: (
 }
 
 // Font icons properties parser handler
-// 
+//
 // @param map $result
-// @param map $options     
+// @param map $options
 // @return map
 // @internal
 @function font-icons-property-parser-normalize-options($result, $options) {

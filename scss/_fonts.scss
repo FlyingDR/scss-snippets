@@ -207,7 +207,7 @@ $font-url-prefix: '' !default;
 }
 
 // Generate font url for given font path
-// 
+//
 // @param string $path      Path to font file
 // @return string
 // @internal
@@ -253,9 +253,9 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
-// @param list $properties      
-// @param map $options     
+//
+// @param list $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-property-prepare-options($properties, $options) {
@@ -266,10 +266,10 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-property-parser-font-family($value, $properties, $options) {
@@ -283,10 +283,10 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-property-parser-font-size($value, $properties, $options) {
@@ -333,10 +333,10 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-property-parser-font-weight($value, $properties, $options) {
@@ -351,10 +351,10 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-property-parser-font-style($value, $properties, $options) {
@@ -369,10 +369,10 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-property-parser-color($value, $properties, $options) {
@@ -386,10 +386,10 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-property-parser-line-height($value, $properties, $options) {
@@ -408,10 +408,10 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-property-parser-letter-spacing($value, $properties, $options) {
@@ -426,10 +426,10 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-property-parser-white-space($value, $properties, $options) {
@@ -444,10 +444,10 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param mixed $value
-// @param map $properties      
-// @param map $options     
+// @param map $properties
+// @param map $options
 // @return map|null
 // @internal
 @function font-property-parser-text-transform($value, $properties, $options) {
@@ -462,9 +462,9 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param map $properties
-// @param map $options     
+// @param map $options
 // @return map
 // @internal
 @function font-property-normalizer-line-height($properties, $options) {
@@ -479,9 +479,9 @@ $font-url-prefix: '' !default;
 }
 
 // Font properties parser handler
-// 
+//
 // @param map $properties
-// @param map $options     
+// @param map $options
 // @return map
 // @internal
 @function font-property-normalizer-important($properties, $options) {
