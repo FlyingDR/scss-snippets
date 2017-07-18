@@ -83,7 +83,7 @@ $offset-properties-parser-id: scss-snippets-offset;
     $remaining-properties: ();
     @if (type-of($options) == map) {
         @each $name, $value in $options {
-            @if ($name == layout and index(map-values($layouts, $value))) {
+            @if ($name == layout and index(map-values($layouts), $value)) {
                 $resulted-options: map-merge($resulted-options, (layout: $value));
             } @else if ($name == auto or $name == important or $name == negative) {
                 @if ($value) {
