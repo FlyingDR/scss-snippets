@@ -204,7 +204,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
             @if ($default == $responsive-test-key) {
                 $cache-type: 'has';
             }
-            $cache-key: $cache-type $cid $key;
+            $cache-key: inspect(($cache-type $cid $key));
             @if (map-has-key($responsive-cache-get, $cache-key)) {
                 @return map-get($responsive-cache-get, $cache-key);
             }
