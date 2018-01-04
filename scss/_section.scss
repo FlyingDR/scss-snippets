@@ -197,8 +197,11 @@ $section-settings: (
     @include section($default-options);
     @if (function-exists(is-responsive) and is-responsive()) {
         @include r-each-if($key) {
-            $local-options: map-merge(section-parse-options(r-get()), (default-options: $default-options));
-            @include section($local-options);
+            $options: r-get();
+            @if ($options != false) {
+                $local-options: map-merge(section-parse-options($options), (default-options: $default-options));
+                @include section($local-options);
+            }
         }
     }
 }
@@ -220,13 +223,16 @@ $section-settings: (
             @include r-each() {
                 $opt: null;
                 @if (r-has('/section')) {
-                    $opt: section-parse-options(r-get('/section'));
+                    $opt: r-get('/section');
                 }
-                > #{map-get($settings, inner-selector)} {
-                    @include container();
+                @if ($opt != false) {
+                    $opt: section-parse-options($opt);
+                    > #{map-get($settings, inner-selector)} {
+                        @include container();
+                    }
+                    @include section($opt);
+                    @include _section-padding(susy-get(outer-padding), susy-get(inner-padding));
                 }
-                @include section($opt);
-                @include _section-padding(susy-get(outer-padding), susy-get(inner-padding));
             }
         } @else {
             > #{map-get($settings, inner-selector)} {
