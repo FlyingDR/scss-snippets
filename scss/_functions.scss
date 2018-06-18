@@ -146,3 +146,24 @@
 @function tint($color, $percentage) {
     @return mix(white, $color, 100% - $percentage);
 }
+
+// Normalize given function
+//
+// @param function|string $func  Either function itself or function name
+// @return function
+// @access private
+@function normalize-function($func) {
+    @if (type-of($func) == function) {
+        @return $func;
+
+    }
+    @if (type-of($func) == string) {
+        @if (function-exists($func)) {
+            @return get-function($func);
+        } @else {
+            @error 'Unavailable function: #{$func}';
+        }
+    } @else {
+        @error 'Unacceptable function type "#{type-of($func)}", expected either function or a string';
+    }
+}

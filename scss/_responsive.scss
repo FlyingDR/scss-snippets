@@ -21,9 +21,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
 //
 // @param string $handler   Handler function name. It should accept (map $config, string $id) arguments and return responsive configuration map
 @mixin responsive-add-handler($handler) {
-    @if (not function-exists($handler)) {
-        @error 'Unavailable responsive configuration handler: #{$handler}';
-    }
+    $handler: normalize-function($handler);
     $responsive-config-handlers: append($responsive-config-handlers, $handler) !global;
 }
 
@@ -31,6 +29,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
 //
 // @param string $handler   Handler function name to remove
 @mixin responsive-remove-handler($handler) {
+    $handler: normalize-function($handler);
     $handlers: ();
     @each $h in $responsive-config-handlers {
         @if ($h != $handler) {
@@ -416,6 +415,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
             }
         }
         @each $handler in $responsive-config-handlers {
+            $handler: normalize-function($handler);
             @each $id in r-get-ids() {
                 $config: call($handler, map-get($responsive-config, $id), $id);
                 $responsive-cache-get: () !global;

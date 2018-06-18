@@ -82,20 +82,18 @@ $properties-parser-default-properties: () !default;
 // Add handler for given properties parser
 //
 // @param string $parser-id         Properties parser id to work with
-// @param string $handler           Handler function name
+// @param function|string $handler  Either handler function or handler function name to add
 // @param string $type              Handler type (parse, normalize)
 // @param string|boolean $after     Handler name to insert given handler after
 //                                  true to set handler at last position
 //                                  false to set handler at first position
 // @return map                      Modified parser structure
 @function properties-parser-add-handler($parser-id, $handler, $type: parse, $after: true) {
-    @if (not function-exists($handler)) {
-        @error 'Unavailable properties parser handler: #{$handler}';
-    }
     $parser: properties-parser-get-handlers($parser-id);
     @if (not map-has-key($parser, $type)) {
         @error 'Invalid parser properties handler type: #{$type}';
     }
+    $handler: normalize-function($handler);
     $result: ();
     @if ($after == false) {
         $result: append($result, $handler);
@@ -117,10 +115,11 @@ $properties-parser-default-properties: () !default;
 // Remove properties parser handler from given parser
 //
 // @param string $parser-id     Properties parser id to work with
-// @param string $handler       Handler function name to remove
+// @param function|string $handler  Either handler function or handler function name to remove
 // @return map                  Modified parser structure
 @function properties-parser-remove-handler($parser-id, $handler) {
     $parser: properties-parser-get-handlers($parser-id);
+    $handler: normalize-function($handler);
     $result: ();
     @each $type, $handlers in $parser {
         $nfh: ();
@@ -138,11 +137,13 @@ $properties-parser-default-properties: () !default;
 // Replace properties parser handler with new handler
 //
 // @param string $parser-id             Properties parser id to work with
-// @param string $handler-to-replace    Handler function name to replace
-// @param string $new-handler           Handler function name to set instead $handler-to-replace
+// @param function|string $handler-to-replace   Either handler function or handler function name to replace
+// @param function|string $new-handler          Either handler function or handler function name to set instead $handler-to-replace
 // @return map                          Modified parser structure
 @function properties-parser-replace-handler($parser-id, $handler-to-replace, $new-handler) {
     $parser: properties-parser-get-handlers($parser-id);
+    $handler-to-replace: normalize-function($handler-to-replace);
+    $new-handler: normalize-function($new-handler);
     $result: ();
     @each $type, $handlers in $parser {
         $nfh: ();
