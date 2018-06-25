@@ -275,6 +275,125 @@ $responsive-test-key: '---responsive-test-key---' !default;
     @return (r-get($key, $responsive-test-key, $id) != $responsive-test-key);
 }
 
+// Get "effective" value from given response configuration keys
+//
+// @param string|list|null $keys    List of responsive configuration keys to check for value
+// @param map $options              Options:
+//  - default   mixed                   Default value to return in a case if no value has been found
+//  - handler   function|string         Function reference (function itself or its name) to call to handle found value
+//  - arg       mixed                   Single argument to pass to handler function for value processing
+//                                      Implemented as separate argument to allow passing list as single argument
+//  - args      list                    List of arguments to pass to handler function for value processing
+//  - key       string                  Map key to take resulted value from
+//  - merge     function|string|boolean One of:
+//                                      - Function reference to call to perform custom merging logic
+//                                      - true to merge collected map values during iteration over given responsive configuration keys
+// @return mixed
+@function r-get-effective($keys: null, $options: null) {
+    @if (type-of($options) != map) {
+        $options: ();
+    }
+    @if (map-has-key($options, handler)) {
+        $options: map-merge($options, (handler: normalize-function(map-get($options, handler))));
+    }
+    @if (map-has-key($options, merge)) {
+        $merge: map-get($options, merge);
+        @if (type-of($merge) == function or type-of($merge) == string) {
+            // Custom merger is passed
+            $merge: normalize-function($merge);
+            $options: map-merge($options, (merge: $merge));
+        }
+    }
+
+    $result: map-get($options, default);
+    @if ($responsive-current-id == null) {
+        @warn 'r-get-effective() can only be called inside r-each()';
+        @return $result;
+    }
+    @each $id in ($responsive-default-id, r-id()) {
+        @each $key in $keys {
+            @if (r-has($key, $id)) {
+                //noinspection CssInvalidFunction
+                $result: __r-get-effective-handle-value($result, r-get($key, $id), $options);
+            }
+        }
+    }
+    @if (map-has-key($options, key) and type-of($result) == map) {
+        // We need to retrieve just given key from received values map
+        $key: map-get($options, key);
+        @if (map-has-key($result, $key)) {
+            $result: map-get($result, $key);
+        } @else {
+            $result: map-get($options, default);
+        }
+    }
+    @return $result;
+}
+
+// Helper function, internally used by r-get-effective()
+//
+// @param mixed $current
+// @param mixed $value
+// @param map $options
+// @return mixed
+// @access private
+@function __r-get-effective-handle-value($current, $value, $options) {
+    @if (map-has-key($options, handler)) {
+        $handler: map-get($options, handler);
+        // We get custom handler for value retrieval
+        @if (map-has-key($options, arg)) {
+            // Since there seems to be no way to distinguish list with single element from plain value -
+            // Single argument can be passed explicitly if needed
+            $value: call($handler, $value, map-get($options, arg));
+        } @else {
+            $args: ();
+            @if (map-has-key($options, args)) {
+                $args: map-get($options, args);
+            }
+            // There is no spread operator in sass, this is dump and limited simulation
+            $count: length($args);
+            @if ($count == 0) {
+                $value: call($handler, $value);
+            } @else if ($count == 1) {
+                $value: call($handler, $value, nth($args, 1));
+            } @else if ($count == 2, nth($args, 1), nth($args, 2)) {
+                $value: call($handler, $value);
+            } @else if ($count == 3) {
+                $value: call($handler, $value, nth($args, 1), nth($args, 2), nth($args, 3));
+            } @else {
+                @error 'Maximum 3 arguments are supported for passing to value handler, #{$count} given';
+            }
+        }
+    }
+
+    @if (map-get($options, merge)) {
+        // We need to merge received value into current value
+        $merge: map-get($options, merge);
+        @if (type-of($merge) == function) {
+            // Custom merger is passed
+            $value: call($merge, $current, $value);
+        } @else if (type-of($current) == map and type-of($value) == map) {
+            // We need to merge received values map into current values map
+            $value: map-merge($current, $value);
+        }
+    } @else if (map-has-key($options, key) and type-of($value) == map) {
+        // We need to retrieve just given key from received values map
+        $key: map-get($options, key);
+        @if (map-has-key($value, $key)) {
+            $value: map-get($value, $key);
+        } @else {
+            $value: null;
+        }
+    }
+
+    @if ($current != null and $value == null) {
+        // No value was received - keep current value
+        $value: $current;
+    }
+
+    @return $value;
+}
+
 // Define prefix for responsive configuration keys passed to r-get() / r-has() to simplify code
 //
 // @param string $prefix
@@ -401,6 +520,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
         @content;
     }
 }
+
+
 
 // Initialize $susy and $susy-media based on information from responsive configuration
 @mixin responsive-init($default-id: null) {
