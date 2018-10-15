@@ -280,6 +280,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
 // @param string|list|null $keys    List of responsive configuration keys to check for value
 // @param map $options              Options:
 //  - default   mixed                   Default value to return in a case if no value has been found
+//  - r-id      string                  Responsive configuration Id to use as "current" value
+//                                      if function is NOT running inside r-each()
 //  - handler   function|string         Function reference (function itself or its name) to call to handle found value
 //  - arg       mixed                   Single argument to pass to handler function for value processing
 //                                      Implemented as separate argument to allow passing list as single argument
@@ -306,11 +308,14 @@ $responsive-test-key: '---responsive-test-key---' !default;
     }
 
     $result: map-get($options, default);
-    @if ($responsive-current-id == null) {
-        @warn 'r-get-effective() can only be called inside r-each()';
-        @return $result;
+    $current-id: $responsive-default-id;
+    @if ($responsive-current-id != null) {
+        $current-id: r-id();
     }
-    @each $id in ($responsive-default-id, r-id()) {
+    @if (map-has-key($options, r-id)) {
+        $current-id: map-get($options, r-id);
+    }
+    @each $id in ($responsive-default-id, $current-id) {
         @each $key in $keys {
             @if (r-has($key, $id)) {
                 //noinspection CssInvalidFunction
