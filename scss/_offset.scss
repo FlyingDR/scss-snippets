@@ -18,6 +18,9 @@ $offset-properties-parser-id: scss-snippets-offset;
             parse: (
                 offset-property-parser-values-renderer,
             ),
+            normalize: (
+                offset-property-parser-offset-flip-normalizer,
+            ),
         ), (
             layout: null,
             auto: false,
@@ -25,6 +28,7 @@ $offset-properties-parser-id: scss-snippets-offset;
             negative: false,
             property: margin,
             group: true,
+            flip: false,
         ));
     }
     @return parse-properties($offset-properties-parser-id, $offset, $options);
@@ -51,6 +55,16 @@ $offset-properties-parser-id: scss-snippets-offset;
             @include offset(r-get(), $options);
         }
     }
+}
+
+// Flip horizontal offsets e.g. to simplify conversion from LTR to RTL layout and vice versa
+//
+// @param boolean $status      Offset keys flipping status
+@mixin offset-flip($status: true) {
+    $current: map-get(properties-parser-get-default-options($offset-properties-parser-id), flip);
+    $null: properties-parser-set-default-option($offset-properties-parser-id, flip, $status);
+    @content;
+    $null: properties-parser-set-default-option($offset-properties-parser-id, flip, $current);
 }
 
 // Offset options normalization. Part of offset properties parser handlers set
@@ -112,6 +126,8 @@ $offset-properties-parser-id: scss-snippets-offset;
                     $resulted-options: map-merge($resulted-options, (negative: true));
                 } @else if ($option == auto) {
                     $resulted-options: map-merge($resulted-options, (auto: true));
+                } @else if ($option == flip) {
+                    $resulted-options: map-merge($resulted-options, (flip: true));
                 } @else {
                     @for $i from 1 through str-length($option) {
                         $char: str-slice($option, $i, $i);
@@ -125,6 +141,8 @@ $offset-properties-parser-id: scss-snippets-offset;
                             $resulted-options: map-merge($resulted-options, (negative: true));
                         } @else if ($char == 'a') {
                             $resulted-options: map-merge($resulted-options, (auto: true));
+                        } @else if ($char == 'f') {
+                            $resulted-options: map-merge($resulted-options, (flip: true));
                         }
                     }
                 }
@@ -146,7 +164,7 @@ $offset-properties-parser-id: scss-snippets-offset;
 // @return map
 // @internal
 @function offset-property-parser-options-handler($properties, $options) {
-    $cache-key: inspect(join($properties, $options));
+    $cache-key: inspect(join(join($properties, $options), properties-parser-get-default-options($offset-properties-parser-id)));
     @if (map-has-key($offset-cache-options-handler, $cache-key)) {
         @return map-get($offset-cache-options-handler, $cache-key);
     }
@@ -351,4 +369,24 @@ $offset-properties-parser-id: scss-snippets-offset;
         $value: append($value, unquote('!important'));
     }
     @return ($property: $value);
+}
+
+@function offset-property-parser-offset-flip-normalizer($result, $options) {
+    @if (map-has-key($options, flip) and map-get($options, flip)) {
+        $keys-map: (
+            margin-left: margin-right,
+            margin-right: margin-left,
+            padding-left: padding-right,
+            padding-right: padding-left,
+        );
+        $r: ();
+        @each $key, $value in $result {
+            @if (map-has-key($keys-map, $key)) {
+                $key: map-get($keys-map, $key);
+            }
+            $r: map-merge($r, ($key: $value));
+        }
+        $result: $r;
+    }
+    @return $result;
 }
