@@ -1,16 +1,14 @@
 $offset-cache-options-normalizer: () !default;
 $offset-cache-options-handler: () !default;
 $offset-cache-values-handler: () !default;
-$offset-properties-parser-id: scss-snippets-offset;
 
-// Parse given offset information
+// Get properties parser for the module
 //
-// @param list $offset          List of offset properties to parse
-// @param list|map $options     Offset options to use for parsing (will override options given in $offset)
-// @return map
-@function parse-offset($offset, $options: null) {
-    @if (not properties-parser-is-registered($offset-properties-parser-id)) {
-        $p: register-properties-parser($offset-properties-parser-id, (
+// @return string   Parser Id
+@function offset-get-properties-parser() {
+    $parser-id: scss-snippets-offset;
+    @if (not properties-parser-is-registered($parser-id)) {
+        $p: register-properties-parser($parser-id, (
             prepare: (
                 offset-property-parser-options-handler,
                 offset-property-parser-values-handler,
@@ -31,7 +29,16 @@ $offset-properties-parser-id: scss-snippets-offset;
             flip: false,
         ));
     }
-    @return parse-properties($offset-properties-parser-id, $offset, $options);
+    @return $parser-id;
+}
+
+// Parse given offset information
+//
+// @param list $offset          List of offset properties to parse
+// @param list|map $options     Offset options to use for parsing (will override options given in $offset)
+// @return map
+@function parse-offset($offset, $options: null) {
+    @return parse-properties(offset-get-properties-parser(), $offset, $options);
 }
 
 // Generate element offsets based on provided information
@@ -61,10 +68,11 @@ $offset-properties-parser-id: scss-snippets-offset;
 //
 // @param boolean $status      Offset keys flipping status
 @mixin offset-flip($status: true) {
-    $current: map-get(properties-parser-get-default-options($offset-properties-parser-id), flip);
-    $null: properties-parser-set-default-option($offset-properties-parser-id, flip, $status);
+    $parser-id: offset-get-properties-parser();
+    $current: map-get(properties-parser-get-default-options($parser-id), flip);
+    $null: properties-parser-set-default-option($parser-id, flip, $status);
     @content;
-    $null: properties-parser-set-default-option($offset-properties-parser-id, flip, $current);
+    $null: properties-parser-set-default-option($parser-id, flip, $current);
 }
 
 // Offset options normalization. Part of offset properties parser handlers set
@@ -78,7 +86,7 @@ $offset-properties-parser-id: scss-snippets-offset;
         @return map-get($offset-cache-options-normalizer, $cache-key);
     }
 
-    $option-keys: map-keys(properties-parser-get-default-options($offset-properties-parser-id));
+    $option-keys: map-keys(properties-parser-get-default-options(offset-get-properties-parser()));
     $layouts: (
         t: top,
         b: bottom,
@@ -164,7 +172,8 @@ $offset-properties-parser-id: scss-snippets-offset;
 // @return map
 // @internal
 @function offset-property-parser-options-handler($properties, $options) {
-    $cache-key: inspect(join(join($properties, $options), properties-parser-get-default-options($offset-properties-parser-id)));
+    $defaults: properties-parser-get-default-options(offset-get-properties-parser());
+    $cache-key: inspect(join(join($properties, $options), $defaults));
     @if (map-has-key($offset-cache-options-handler, $cache-key)) {
         @return map-get($offset-cache-options-handler, $cache-key);
     }
@@ -186,7 +195,7 @@ $offset-properties-parser-id: scss-snippets-offset;
             $resulted-properties: join($resulted-properties, $p);
         }
     }
-    $resulted-options: properties-parser-get-default-options($offset-properties-parser-id);
+    $resulted-options: $defaults;
     $p: null;
     @if (map-has-key($parsed-properties, options)) {
         $p: map-get($parsed-properties, options);

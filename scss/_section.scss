@@ -19,11 +19,10 @@ $section-settings: (
 
 // Padding to add to inner section element to provide visual spacing around site content
 
-// Parse given section options
+// Get properties parser for the module
 //
-// @param string|map $options   Options to parse
-// @return map
-@function section-parse-options($section, $options: null) {
+// @return string   Parser Id
+@function section-get-properties-parser() {
     $parser-id: scss-snippets-section;
     @if (not properties-parser-is-registered($parser-id)) {
         $p: register-properties-parser($parser-id, (
@@ -39,7 +38,15 @@ $section-settings: (
             ),
         ));
     }
-    @return parse-properties($parser-id, $section, $options);
+    @return $parser-id;
+}
+
+// Parse given section options
+//
+// @param string|map $options   Options to parse
+// @return map
+@function section-parse-options($section, $options: null) {
+    @return parse-properties(section-get-properties-parser(), $section, $options);
 }
 
 // Normalize and get global section settings

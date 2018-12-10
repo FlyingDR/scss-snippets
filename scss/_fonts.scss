@@ -15,17 +15,10 @@ $font-default-properties: (
 ) !default;
 $font-url-prefix: '' !default;
 
-// Parse given font string into set of CSS properties and their values
+// Get properties parser for the module
 //
-// @param list $font        Font values list to parse
-// @param map $options      Additional options to pass to font parsers
-// @return map
-// noinspection SassScssResolvedByNameOnly
-@function parse-font($font, $options: null) {
-    @if (type-of($font) == map) {
-        // Treat map argument as "already parsed font properties"
-        @return $font;
-    }
+// @return string   Parser Id
+@function font-get-properties-parser() {
     $parser-id: scss-snippets-fonts;
     @if (not properties-parser-is-registered($parser-id)) {
         $p: register-properties-parser($parser-id, (
@@ -54,7 +47,17 @@ $font-url-prefix: '' !default;
             max-letter-spacing: 0.5,
         ));
     }
-    @return parse-properties($parser-id, $font, $options);
+    @return $parser-id;
+}
+
+// Parse given font string into set of CSS properties and their values
+//
+// @param list $font        Font values list to parse
+// @param map $options      Additional options to pass to font parsers
+// @return map
+// noinspection SassScssResolvedByNameOnly
+@function parse-font($font, $options: null) {
+    @return parse-properties(font-get-properties-parser(), $font, $options);
 }
 
 // Generate font CSS properties from given font string

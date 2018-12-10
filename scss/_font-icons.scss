@@ -84,18 +84,11 @@ $font-icons-config: (
     }
 }
 
-// Parse given font icon string into set of font icon properties and their values
+// Get properties parser for the module
 //
-// @param list $icon        Font icon information to parse
-// @param map $options      Additional options to pass to property parsers
-// @return map
-// noinspection SassScssResolvedByNameOnly
-@function parse-font-icon($icon, $options: null) {
-    @if (type-of($icon) == map) {
-        // Treat map argument as "already parsed properties"
-        @return $icon;
-    }
-    $parser-id: scss-snippets-font-icon;
+// @return string   Parser Id
+@function font-icon-get-properties-parser() {
+    $parser-id: scss-snippets-font-icons;
     @if (not properties-parser-is-registered($parser-id)) {
         $p: register-properties-parser($parser-id, (
             prepare: (
@@ -125,7 +118,16 @@ $font-icons-config: (
             only-content: false,
         ));
     }
-    @return parse-properties($parser-id, $icon, $options);
+    @return $parser-id;
+}
+
+// Parse given font icon string into set of font icon properties and their values
+//
+// @param list $icon        Font icon information to parse
+// @param map $options      Additional options to pass to property parsers
+// @return map
+@function parse-font-icon($icon, $options: null) {
+    @return parse-properties(font-icon-get-properties-parser(), $icon, $options);
 }
 
 // Create font icon by given parameters
