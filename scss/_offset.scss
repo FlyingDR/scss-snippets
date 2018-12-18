@@ -12,12 +12,11 @@ $offset-cache-values-handler: () !default;
             prepare: (
                 offset-property-parser-options-handler,
                 offset-property-parser-values-handler,
+                offset-property-parser-offset-flip-handler,
+                offset-property-parser-grouping-handler,
             ),
             parse: (
                 offset-property-parser-values-renderer,
-            ),
-            normalize: (
-                offset-property-parser-offset-flip-normalizer,
             ),
         ), (
             layout: null,
@@ -232,117 +231,202 @@ $offset-cache-values-handler: () !default;
     $auto: map-get($options, auto);
     $property: map-get($options, property);
     $group: map-get($options, group);
-    $result: ();
+    $result: (
+        #{$property}-top: null,
+        #{$property}-right: null,
+        #{$property}-bottom: null,
+        #{$property}-left: null,
+    );
 
     @if (index((top, bottom, left, right), $layout) and length($properties) >= 1) {
+        // Single side layout
         $result: map-merge($result, (#{$property}-#{$layout}: nth($properties, 1)));
     } @else if (index((vertical, horizontal), $layout) and length($properties) >= 1) {
+        // Axis layout
         $first: nth($properties, 1);
         $second: null;
         @if (length($properties) >= 2) {
             $second: nth($properties, 2);
         }
-        @if ($group) {
-            @if ($auto) {
-                @if ($layout == vertical) {
-                    @if ($second != null) {
-                        $result: map-merge($result, (#{$property}: $first auto $second));
-                    } @else {
-                        $result: map-merge($result, (#{$property}: $first auto));
-                    }
+        @if ($second == null) {
+            $second: $first;
+        }
+        $first: $first;
+        $second: $second;
+        $a: auto;
+        @if ($layout == vertical) {
+            // Vertical layout
+            $result: map-merge($result, (
+                #{$property}-top: $first,
+                #{$property}-bottom: $second,
+            ));
+        } @else {
+            // Horizontal layout
+            $result: map-merge($result, (
+                #{$property}-left: $second,
+                #{$property}-right: $first,
+            ));
+        }
+        @if ($auto) {
+            @if ($layout == vertical) {
+                // Vertical layout with auto-layout
+                $result: map-merge($result, (
+                    #{$property}-right: $a,
+                    #{$property}-left: $a,
+                ));
+            } @else {
+                // Horizontal layout with auto-layout
+                $result: map-merge($result, (
+                    #{$property}-top: $a,
+                    #{$property}-bottom: $a,
+                ));
+            }
+        }
+    } @else {
+        // Complete layout, various cases depending on provided amount of values
+        @if (length($properties) == 1) {
+            $v: nth($properties, 1);
+            $result: map-merge($result, (
+                #{$property}-top: $v,
+                #{$property}-right: $v,
+                #{$property}-bottom: $v,
+                #{$property}-left: $v,
+            ));
+        } @else if (length($properties) == 2) {
+            $y: nth($properties, 1);
+            $x: nth($properties, 2);
+            $result: map-merge($result, (
+                #{$property}-top: $y,
+                #{$property}-right: $x,
+                #{$property}-bottom: $y,
+                #{$property}-left: $x,
+            ));
+        } @else if (length($properties) == 3) {
+            $t: nth($properties, 1);
+            $rl: nth($properties, 2);
+            $b: nth($properties, 3);
+            $result: map-merge($result, (
+                #{$property}-top: $t,
+                #{$property}-right: $rl,
+                #{$property}-bottom: $b,
+                #{$property}-left: $rl,
+            ));
+        } @else if (length($properties) >= 4) {
+            $t: nth($properties, 1);
+            $r: nth($properties, 2);
+            $b: nth($properties, 3);
+            $l: nth($properties, 4);
+            $result: map-merge($result, (
+                #{$property}-top: $t,
+                #{$property}-right: $r,
+                #{$property}-bottom: $b,
+                #{$property}-left: $l,
+            ));
+        }
+    }
+
+    $result: (properties: $result);
+    $offset-cache-values-handler: map-merge($offset-cache-values-handler, ($cache-key: $result)) !global;
+    @return $result;
+}
+
+// Offset options parser handler. Part of offset properties parser handlers set
+//
+// @param list $properties
+// @param map $options
+// @return map
+// @internal
+@function offset-property-parser-offset-flip-handler($properties, $options) {
+    @if (map-has-key($options, flip) and map-get($options, flip)) {
+        $b: $properties;
+        $keys-map: (
+            margin-left: margin-right,
+            margin-right: margin-left,
+            padding-left: padding-right,
+            padding-right: padding-left,
+        );
+        $layout-map: (
+            left: right,
+            right: left,
+        );
+        $r: ();
+        @each $key, $value in $properties {
+            @if (map-has-key($keys-map, $key)) {
+                $key: map-get($keys-map, $key);
+            }
+            $r: map-merge($r, ($key: $value));
+        }
+        $properties: $r;
+        @if (map-has-key($options, layout)) {
+            $layout: map-get($options, layout);
+            @if (map-has-key($layout-map, $layout)) {
+                $options: map-merge($options, (layout: map-get($layout-map, $layout)));
+            }
+        }
+    }
+    @return (properties: $properties, options: $options);
+}
+
+// Offset options parser handler. Part of offset properties parser handlers set
+//
+// @param list $properties
+// @param map $options
+// @return map
+// @internal
+@function offset-property-parser-grouping-handler($properties, $options) {
+    @if (not map-has-key($options, group) or map-get($options, group) == false) {
+        @return $properties;
+    }
+    $cache-key: inspect(join($properties, $options));
+    @if (map-has-key($offset-cache-values-handler, $cache-key)) {
+        @return map-get($offset-cache-values-handler, $cache-key);
+    }
+
+    $layout: map-get($options, layout);
+    $auto: map-get($options, auto);
+    $property: map-get($options, property);
+    $result: ();
+
+    @if (index((top, bottom, left, right), $layout)) {
+        $result: map-merge($result, (#{$property}-#{$layout}: map-get($properties, #{$property}-#{$layout})));
+    } @else if (index((vertical, horizontal), $layout)) {
+        $first: null;
+        $second: null;
+        @if ($layout == vertical) {
+            $first: map-get($properties, #{$property}-top);
+            $second: map-get($properties, #{$property}-bottom);
+        } @else {
+            $first: map-get($properties, #{$property}-left);
+            $second: map-get($properties, #{$property}-right);
+        }
+        @if ($auto) {
+            @if ($layout == vertical) {
+                @if ($second != null) {
+                    $result: map-merge($result, (#{$property}: $first auto $second));
                 } @else {
-                    @if ($second != null) {
-                        $result: map-merge($result, (#{$property}: auto $first auto $second));
-                    } @else {
-                        $result: map-merge($result, (#{$property}: auto $first));
-                    }
+                    $result: map-merge($result, (#{$property}: $first auto));
                 }
             } @else {
-                @if ($second == null) {
-                    $second: $first;
-                }
-                @if ($layout == vertical) {
-                    $result: map-merge($result, (#{$property}-top: $first, #{$property}-bottom: $second));
+                @if ($second != null) {
+                    $result: map-merge($result, (#{$property}: auto $first auto $second));
                 } @else {
-                    $result: map-merge($result, (#{$property}-left: $second, #{$property}-right: $first));
+                    $result: map-merge($result, (#{$property}: auto $first));
                 }
             }
         } @else {
             @if ($second == null) {
                 $second: $first;
             }
-            $first: $first;
-            $second: $second;
-            $a: auto;
             @if ($layout == vertical) {
-                $result: map-merge($result, (
-                    #{$property}-top: $first,
-                    #{$property}-bottom: $second,
-                ));
+                $result: map-merge($result, (#{$property}-top: $first, #{$property}-bottom: $second));
             } @else {
-                $result: map-merge($result, (
-                    #{$property}-left: $second,
-                    #{$property}-right: $first,
-                ));
-            }
-            @if ($auto) {
-                @if ($layout == vertical) {
-                    $result: map-merge($result, (
-                        #{$property}-right: $a,
-                        #{$property}-left: $a,
-                    ));
-                } @else {
-                    $result: map-merge($result, (
-                        #{$property}-top: $a,
-                        #{$property}-bottom: $a,
-                    ));
-                }
+                $result: map-merge($result, (#{$property}-left: $second, #{$property}-right: $first));
             }
         }
     } @else {
-        @if ($group) {
-            $result: map-merge($result, (#{$property}: $properties));
-        } @else {
-            @if (length($properties) == 1) {
-                $v: nth($properties, 1);
-                $result: map-merge($result, (
-                    #{$property}-top: $v,
-                    #{$property}-right: $v,
-                    #{$property}-bottom: $v,
-                    #{$property}-left: $v,
-                ));
-            } @else if (length($properties) == 2) {
-                $y: nth($properties, 1);
-                $x: nth($properties, 2);
-                $result: map-merge($result, (
-                    #{$property}-top: $y,
-                    #{$property}-right: $x,
-                    #{$property}-bottom: $y,
-                    #{$property}-left: $x,
-                ));
-            } @else if (length($properties) == 3) {
-                $t: nth($properties, 1);
-                $rl: nth($properties, 2);
-                $b: nth($properties, 3);
-                $result: map-merge($result, (
-                    #{$property}-top: $t,
-                    #{$property}-right: $rl,
-                    #{$property}-bottom: $b,
-                    #{$property}-left: $rl,
-                ));
-            } @else if (length($properties) >= 4) {
-                $t: nth($properties, 1);
-                $r: nth($properties, 2);
-                $b: nth($properties, 3);
-                $l: nth($properties, 4);
-                $result: map-merge($result, (
-                    #{$property}-top: $t,
-                    #{$property}-right: $r,
-                    #{$property}-bottom: $b,
-                    #{$property}-left: $l,
-                ));
-            }
-        }
+        $result: map-merge($result, (#{$property}: join((
+            map-get($properties, #{$property}-top) map-get($properties, #{$property}-right) map-get($properties, #{$property}-bottom) map-get($properties, #{$property}-left)
+        ), (), 'space')));
     }
 
     $result: (properties: $result);
@@ -378,24 +462,4 @@ $offset-cache-values-handler: () !default;
         $value: append($value, unquote('!important'));
     }
     @return ($property: $value);
-}
-
-@function offset-property-parser-offset-flip-normalizer($result, $options) {
-    @if (map-has-key($options, flip) and map-get($options, flip)) {
-        $keys-map: (
-            margin-left: margin-right,
-            margin-right: margin-left,
-            padding-left: padding-right,
-            padding-right: padding-left,
-        );
-        $r: ();
-        @each $key, $value in $result {
-            @if (map-has-key($keys-map, $key)) {
-                $key: map-get($keys-map, $key);
-            }
-            $r: map-merge($r, ($key: $value));
-        }
-        $result: $r;
-    }
-    @return $result;
 }
