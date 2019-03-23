@@ -280,7 +280,8 @@ $responsive-test-key: '---responsive-test-key---' !default;
 // @param string|list|null $keys    List of responsive configuration keys to check for value
 // @param map $options              Options:
 //  - default   mixed                   Default value to return in a case if no value has been found
-//  - r-id      string                  Responsive configuration Id to use as "current" value
+//  - r-id      string|list             Either responsive configuration Id to use as "current" value
+//                                      or explicit list of responsive configurations to run through
 //                                      if function is NOT running inside r-each()
 //  - handler   function|string         Function reference (function itself or its name) to call to handle found value
 //  - arg       mixed                   Single argument to pass to handler function for value processing
@@ -308,14 +309,23 @@ $responsive-test-key: '---responsive-test-key---' !default;
     }
 
     $result: map-get($options, default);
-    $current-id: $responsive-default-id;
-    @if ($responsive-current-id != null) {
-        $current-id: r-id();
+    $ids: ();
+    @if (map-has-key($options, r-id) and type-of(map-get($options, r-id)) == list) {
+        $ids: map-get($options, r-id);
+    } @else {
+        $ids: ($responsive-default-id);
+        $current-id: null;
+        @if ($responsive-current-id != null) {
+            $current-id: r-id();
+        }
+        @if (map-has-key($options, r-id)) {
+            $current-id: map-get($options, r-id);
+        }
+        @if ($current-id != null and $current-id != $responsive-default-id) {
+            $ids: append($ids, $current-id);
+        }
     }
-    @if (map-has-key($options, r-id)) {
-        $current-id: map-get($options, r-id);
-    }
-    @each $id in ($responsive-default-id, $current-id) {
+    @each $id in $ids {
         @each $key in $keys {
             @if (r-has($key, $id)) {
                 //noinspection CssInvalidFunction
