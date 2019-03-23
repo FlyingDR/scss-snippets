@@ -108,7 +108,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
             @return $responsive-default-id;
         }
     } @else {
-        @error 'Unvalid type of responsive configuration id: #{type-of($id)}';
+        @error 'Invalid type of responsive configuration id: #{type-of($id)}';
         @return null;
     }
 }
