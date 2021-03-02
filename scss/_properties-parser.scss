@@ -130,7 +130,7 @@ $properties-parser-default-properties: () !default;
         }
         $result: map-merge($result, ($type: $nfh));
     }
-    $properties-parser-registered-handlers: map-merge($properties-parser-registered-handlers, ($parser-id: $parser)) !global;
+    $properties-parser-registered-handlers: map-merge($properties-parser-registered-handlers, ($parser-id: $result)) !global;
     @return $parser;
 }
 
@@ -156,7 +156,7 @@ $properties-parser-default-properties: () !default;
         }
         $result: map-merge($result, ($type: $nfh));
     }
-    $properties-parser-registered-handlers: map-merge($properties-parser-registered-handlers, ($parser-id: $parser)) !global;
+    $properties-parser-registered-handlers: map-merge($properties-parser-registered-handlers, ($parser-id: $result)) !global;
     @return $parser;
 }
 
