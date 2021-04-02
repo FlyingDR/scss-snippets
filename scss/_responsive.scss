@@ -472,6 +472,32 @@ $responsive-test-key: '---responsive-test-key---' !default;
     @return false;
 }
 
+/// Get effective value of responsive configuration key
+/// from given list of keys
+///
+/// This function is useful in a case if there is several possible responsive
+/// configurations are available (e.g. default one and one for some particular page)
+/// and it is need to get responsive configuration path for actually available
+/// configuration key
+///
+/// @param {list|string|null} $keys         List of keys to try
+/// @param {string|null} [null] $suffix     Suffix to apply for keys from list
+/// @return {string|null}
+@function r-key-effective($keys, $suffix: null) {
+    @each $key in $keys {
+        @if (r-is-key($key)) {
+            @if (type-of($suffix) == string) {
+                $key: '#{$key}/#{$suffix}';
+            }
+            @if (r-is-key($key, true)) {
+                @return $key;
+            }
+        }
+    }
+
+    @return null;
+}
+
 // Simplification of iteration over available media queries
 //
 // @param mixed $layout         true to use default layout from configuration
