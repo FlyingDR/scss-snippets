@@ -472,6 +472,23 @@ $responsive-test-key: '---responsive-test-key---' !default;
     @return false;
 }
 
+/// Expand given responsive configuration key into fully qualified key
+///
+/// @param {string|null} [null] $key    Responsive configuration key to expand
+/// @return {string|null}
+@function r-expand-key($key: null) {
+    @if (type-of($key) == string) {
+        @if (str-slice($key, 1, 1) != '/' and r-have-key-prefix()) {
+            $key: '/' + r-get-key-prefix() + '/' + $key;
+        }
+    } @else {
+        @if (r-have-key-prefix()) {
+            $key: '/' + r-get-key-prefix();
+        }
+    }
+    @return $key;
+}
+
 /// Get effective value of responsive configuration key
 /// from given list of keys
 ///
