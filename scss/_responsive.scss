@@ -489,7 +489,7 @@ $responsive-test-key: '---responsive-test-key---' !default;
             @if (type-of($suffix) == string) {
                 $key: '#{$key}/#{$suffix}';
             }
-            @if (r-is-key($key, true)) {
+            @if (r-has($key)) {
                 @return $key;
             }
         }
