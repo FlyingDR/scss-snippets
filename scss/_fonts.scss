@@ -8,7 +8,7 @@ $font-file-formats: (
     ttf: truetype,
     svg: svg,
 ) !default;
-$font-default-formats: woff ttf eot svg !default;
+$font-default-formats: woff2 woff !default;
 $font-default-properties: (
     font-weight: normal,
     font-style: normal,
