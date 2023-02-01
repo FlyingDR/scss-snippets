@@ -134,7 +134,7 @@ $font-url-prefix: '' !default;
 //                                  - base file name (without extension) of font file if file is stored locally
 //                                  - map ($filename: $properties)
 //                                  - map: ($filename: (properties: $properties, formats: $formats))
-// @param string|list $properties   String for parse-font() or list of additional font CSS properties to put in @font-face definition, e.g. (font-weight: bold), defaults to $font-default-properties
+// @param list|map $properties      List for parse-font() or map with additional font CSS properties to put in @font-face definition, e.g. (font-weight: bold), defaults to $font-default-properties
 // @param list $formats             List of file formats for locally stored font file, defaults to $font-default-formats
 @mixin register-font($id, $font-names, $filename: null, $properties: null, $formats: null) {
     @if (type-of($font-names) != list) {
