@@ -233,7 +233,7 @@ $font-url-prefix: '' !default;
                 //noinspection CssInvalidFunction
                 src: font-url('#{$filename}.eot');
             }
-            $sources: ();
+            $sources: (local('#{map-get($info, name)}'));
             @if (index($formats, eot) != null) {
                 $ff: map-get($font-file-formats, eot);
                 //noinspection CssInvalidFunction
