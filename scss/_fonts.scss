@@ -9,9 +9,11 @@ $font-file-formats: (
     svg: svg,
 ) !default;
 $font-default-formats: woff2 woff !default;
+$font-default-display-mode: swap !default;
 $font-default-properties: (
     font-weight: normal,
     font-style: normal,
+    font-display: $font-default-display-mode,
 ) !default;
 $font-url-prefix: '' !default;
 
@@ -247,7 +249,10 @@ $font-url-prefix: '' !default;
                 }
             }
             src: join($sources, (), comma);
-            @each $prop, $value in map-get($info, properties) {
+
+            // font-display is not supported by parse-font(), but it is desirable to have it to be defined in @font-face
+            $properties: map-merge((font-display: $font-default-display-mode), map-get($info, properties));
+            @each $prop, $value in $properties {
                 #{$prop}: $value;
             }
         }
